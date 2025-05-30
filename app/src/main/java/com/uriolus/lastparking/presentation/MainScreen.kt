@@ -7,6 +7,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -15,6 +16,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.uriolus.lastparking.R
@@ -30,6 +32,30 @@ fun MainScreen(
     var comment by remember { mutableStateOf(TextFieldValue("")) }
     
     Scaffold(
+        topBar = {
+            TopAppBar(
+                title = {
+                    Text(
+                        text = stringResource(R.string.app_name),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                },
+                actions = {
+                    IconButton(onClick = { /* TODO: Open menu */ }) {
+                        Icon(
+                            imageVector = Icons.Default.MoreVert,
+                            contentDescription = stringResource(R.string.menu)
+                        )
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                    actionIconContentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+            )
+        },
         floatingActionButton = {
             FloatingActionButton(
                 onClick = onAddLocation,
@@ -47,7 +73,7 @@ fun MainScreen(
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            // Map and Image Column - Now takes 70% of screen height
+            // Map and Image Column - Takes 70% of screen height
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -120,7 +146,7 @@ fun MainScreen(
                     singleLine = true
                 )
                 
-                // Comment Field (now single line)
+                // Comment Field (single line)
                 OutlinedTextField(
                     value = comment,
                     onValueChange = { comment = it },
