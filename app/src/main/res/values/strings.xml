@@ -1,0 +1,21 @@
+<resources>
+    <string name="app_name">LastParking</string>
+    
+    <!-- Main Screen -->
+    <string name="add_location">Add Location</string>
+    <string name="map_location">Map Location</string>
+    <string name="take_photo">Take Photo</string>
+    <string name="address">Address</string>
+    <string name="comment">Comment</string>
+    <string name="save">Save</string>
+    <string name="saving">Saving...</string>
+    <string name="location_saved">Location saved</string>
+    <string name="error_saving_location">Error saving location</string>
+    <string name="no_location_saved">No location saved yet</string>
+    <string name="gps_accuracy">GPS Accuracy: %1$.1f meters</string>
+    <string name="gps_searching">Searching for location…</string>
+    <string name="gps_acquired">Location acquired</string>
+    <string name="capture_image">Capture Image</string>
+    <string name="image_captured">Image captured</string>
+    <string name="error_capturing_image">Error capturing image</string>
+</resources>
