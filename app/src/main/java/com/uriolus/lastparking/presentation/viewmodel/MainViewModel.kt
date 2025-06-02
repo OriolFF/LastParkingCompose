@@ -3,6 +3,7 @@ package com.uriolus.lastparking.presentation.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import arrow.core.Either
+import com.uriolus.lastparking.domain.model.AppError
 import com.uriolus.lastparking.domain.model.Parking
 import com.uriolus.lastparking.domain.use_case.GetLastParkingUseCase
 import com.uriolus.lastparking.domain.use_case.SaveParkingUseCase
@@ -48,7 +49,13 @@ class MainViewModel(
             when (val result = getLastParkingUseCase.exec()) {
                 is Either.Left -> {
                     println("Error getting last parking: ${result.value}")
-                    _uiState.value = MainUiState.Error(result.value)}
+                    when (result.value) {
+                        AppError.ErrorNoPreviousParking -> _uiState.value = MainUiState.Empty
+                        else ->
+                            _uiState.value = MainUiState.Error(result.value)
+                    }
+                }
+
                 is Either.Right -> _uiState.value = MainUiState.Success(result.value)
             }
         }
