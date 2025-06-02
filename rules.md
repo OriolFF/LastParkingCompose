@@ -13,7 +13,7 @@ The static map is replaced by a dynamic map that shows the current user location
 
 # Architecture 
 - Kotlin
-- MVVM
+- MVI
 - Jetpack Compose
 - Room
 - Clean Architecture

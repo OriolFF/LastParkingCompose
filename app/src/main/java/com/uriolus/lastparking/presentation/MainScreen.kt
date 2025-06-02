@@ -19,18 +19,42 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.material.icons.filled.Refresh
 import com.uriolus.lastparking.R
+import com.uriolus.lastparking.domain.model.AppError
+import com.uriolus.lastparking.domain.model.Parking
+import com.uriolus.lastparking.presentation.viewstate.MainUiState
 import com.uriolus.lastparking.ui.theme.LastParkingTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainScreen(
     modifier: Modifier = Modifier,
+    uiState: com.uriolus.lastparking.presentation.viewstate.MainUiState = com.uriolus.lastparking.presentation.viewstate.MainUiState.Empty,
+    onSaveParking: (Parking) -> Unit = {},
+    onLoadParking: () -> Unit = {},
     onAddLocation: () -> Unit = {}
 ) {
-    var address by remember { mutableStateOf(TextFieldValue("")) }
-    var comment by remember { mutableStateOf(TextFieldValue("")) }
-    
+    var address by remember { mutableStateOf("") }
+    var notes by remember { mutableStateOf("") }
+
+    LaunchedEffect(uiState) {
+        when (uiState) {
+            is com.uriolus.lastparking.presentation.viewstate.MainUiState.Success -> {
+                address = uiState.parking.address ?: ""
+                notes = uiState.parking.notes
+            }
+            is MainUiState.Error -> {
+                // Handle error state if needed
+            }
+            else -> {
+                // Reset fields for other states
+                address = ""
+                notes = ""
+            }
+        }
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -57,110 +81,175 @@ fun MainScreen(
             )
         },
         floatingActionButton = {
-            FloatingActionButton(
-                onClick = onAddLocation,
-                containerColor = MaterialTheme.colorScheme.primary
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Add,
-                    contentDescription = stringResource(R.string.add_location)
-                )
+            Column {
+
+                FloatingActionButton(
+                    onClick = onAddLocation,
+                    containerColor = MaterialTheme.colorScheme.primary
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Add,
+                        contentDescription = stringResource(R.string.add_location)
+                    )
+                }
             }
         }
     ) { padding ->
-        Column(
-            modifier = modifier
-                .fillMaxSize()
-                .padding(padding)
-        ) {
-            // Map and Image Column - Takes 70% of screen height
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(0.7f)
-                    .padding(horizontal = 16.dp, vertical = 8.dp)
-            ) {
-                // Map Placeholder
+        when (uiState) {
+            is MainUiState.Loading -> {
                 Box(
                     modifier = Modifier
-                        .weight(1f)
-                        .fillMaxWidth()
-                        .background(
-                            color = Color.LightGray.copy(alpha = 0.3f),
-                            shape = RoundedCornerShape(8.dp)
-                        )
-                        .padding(8.dp),
+                        .fillMaxSize()
+                        .padding(padding),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.LocationOn,
-                        contentDescription = stringResource(R.string.map_location),
-                        tint = Color.Gray,
-                        modifier = Modifier.size(48.dp)
-                    )
+                    CircularProgressIndicator()
                 }
-                
-                Spacer(modifier = Modifier.height(16.dp))
-                
-                // Image Placeholder
+            }
+            is MainUiState.Error -> {
                 Box(
                     modifier = Modifier
-                        .weight(1f)
-                        .fillMaxWidth()
-                        .background(
-                            color = Color.LightGray.copy(alpha = 0.3f),
-                            shape = RoundedCornerShape(8.dp)
-                        )
-                        .padding(8.dp),
+                        .fillMaxSize()
+                        .padding(padding),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(
-                        painter = painterResource(R.drawable.ic_camera),
-                        contentDescription = stringResource(R.string.take_photo),
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(48.dp)
+                    Text(
+                        text = "Error: ${uiState.error}",
+                        color = MaterialTheme.colorScheme.error
                     )
                 }
             }
-            
-            // Form fields - Takes remaining 30% of screen
-            Column(
-                modifier = Modifier
-                    .weight(0.3f)
-                    .padding(horizontal = 16.dp)
-            ) {
-                // Address Field
-                OutlinedTextField(
-                    value = address,
-                    onValueChange = { address = it },
-                    label = { Text(stringResource(R.string.address)) },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 16.dp),
-                    leadingIcon = {
-                        Icon(
-                            imageVector = Icons.Default.Edit,
-                            contentDescription = null
+            else -> {
+                Column(
+                    modifier = modifier
+                        .fillMaxSize()
+                        .padding(padding)
+                ) {
+                    // Map and Image Column - Takes 70% of screen height
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(0.7f)
+                            .padding(horizontal = 16.dp, vertical = 8.dp)
+                    ) {
+                        // Map Placeholder
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .fillMaxWidth()
+                                .background(
+                                    color = Color.LightGray.copy(alpha = 0.3f),
+                                    shape = RoundedCornerShape(8.dp)
+                                )
+                                .padding(8.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            if (uiState is MainUiState.Success) {
+                                // Show map with location if available
+                                Icon(
+                                    imageVector = Icons.Default.LocationOn,
+                                    contentDescription = stringResource(R.string.map_location),
+                                    tint = Color.Gray,
+                                    modifier = Modifier.size(48.dp)
+                                )
+                            } else {
+                                Text("No location saved")
+                            }
+                        }
+                        
+                        Spacer(modifier = Modifier.height(16.dp))
+                        
+                        // Image Placeholder
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .fillMaxWidth()
+                                .background(
+                                    color = Color.LightGray.copy(alpha = 0.3f),
+                                    shape = RoundedCornerShape(8.dp)
+                                )
+                                .padding(8.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            if (uiState is MainUiState.Success && !uiState.parking.imageUri.isNullOrEmpty()) {
+                                // Show saved image if available
+                                // TODO: Load image from URI
+                                Icon(
+                                    painter = painterResource(R.drawable.ic_camera),
+                                    contentDescription = "Parking image",
+                                    modifier = Modifier.fillMaxSize()
+                                )
+                            } else {
+                                Icon(
+                                    painter = painterResource(R.drawable.ic_camera),
+                                    contentDescription = stringResource(R.string.take_photo),
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(48.dp)
+                                )
+                            }
+                        }
+                    }
+                    
+                    // Form fields - Takes remaining 30% of screen
+                    Column(
+                        modifier = Modifier
+                            .weight(0.3f)
+                            .padding(horizontal = 16.dp)
+                    ) {
+                        // Address Field
+                        OutlinedTextField(
+                            value = address,
+                            onValueChange = { address = it },
+                            label = { Text(stringResource(R.string.address)) },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(bottom = 16.dp),
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Default.Edit,
+                                    contentDescription = null
+                                )
+                            },
+                            singleLine = true,
+                            readOnly = uiState is MainUiState.Success
                         )
-                    },
-                    singleLine = true
-                )
-                
-                // Comment Field (single line)
-                OutlinedTextField(
-                    value = comment,
-                    onValueChange = { comment = it },
-                    label = { Text(stringResource(R.string.comment)) },
-                    modifier = Modifier
-                        .fillMaxWidth(),
-                    leadingIcon = {
-                        Icon(
-                            imageVector = Icons.Default.Edit,
-                            contentDescription = null
+                        
+                        // Notes Field
+                        OutlinedTextField(
+                            value = notes,
+                            onValueChange = { notes = it },
+                            label = { Text(stringResource(R.string.comment)) },
+                            modifier = Modifier
+                                .fillMaxWidth(),
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Default.Edit,
+                                    contentDescription = null
+                                )
+                            },
+                            singleLine = true,
+                            readOnly = uiState is MainUiState.Success
                         )
-                    },
-                    singleLine = true
-                )
+                        
+                        if (uiState is MainUiState.Success) {
+                            Button(
+                                onClick = { 
+                                    onSaveParking(
+                                        uiState.parking.copy(
+                                            address = address,
+                                            notes = notes
+                                        )
+                                    )
+                                },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = 8.dp)
+                            ) {
+                                Text("Save Changes")
+                            }
+                        }
+                    }
+                }
             }
         }
     }
@@ -170,6 +259,58 @@ fun MainScreen(
 @Composable
 fun MainScreenPreview() {
     LastParkingTheme {
-        MainScreen()
+        MainScreen(
+            uiState = MainUiState.Success(
+                Parking(
+                    id = "1",
+                    notes = "Test comment",
+                    latitude = 0.0,
+                    longitude = 0.0,
+                    address = "123 Main St"
+                )
+            ),
+            onSaveParking = {},
+            onLoadParking = {},
+            onAddLocation = {}
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun MainScreenLoadingPreview() {
+    LastParkingTheme {
+        MainScreen(
+            uiState = MainUiState.Loading,
+            onSaveParking = {},
+            onLoadParking = {},
+            onAddLocation = {}
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun MainScreenErrorPreview() {
+    LastParkingTheme {
+        MainScreen(
+            uiState = MainUiState.Error(AppError.ErrorLoading("Failed to load parking")),
+            onSaveParking = {},
+            onLoadParking = {},
+            onAddLocation = {}
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun MainScreenEmptyPreview() {
+    LastParkingTheme {
+        MainScreen(
+            uiState = MainUiState.Empty,
+            onSaveParking = {},
+            onLoadParking = {},
+            onAddLocation = {}
+        )
     }
 }
