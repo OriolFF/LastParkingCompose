@@ -16,28 +16,28 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.hilt.navigation.compose.hiltViewModel
 import com.uriolus.lastparking.presentation.contract.MainEvent
 import com.uriolus.lastparking.presentation.viewmodel.MainViewModel
+import org.koin.androidx.viewmodel.ext.android.viewModel
 import com.uriolus.lastparking.ui.theme.LastParkingTheme
-import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 
-@AndroidEntryPoint
+
 class MainActivity : ComponentActivity() {
+    private val viewModel: MainViewModel by viewModel()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            LastParkingApp()
+            LastParkingApp(viewModel = viewModel)
         }
     }
 }
 
 @Composable
 fun LastParkingApp(
-    viewModel: MainViewModel = hiltViewModel()
+    viewModel: MainViewModel
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -55,6 +55,7 @@ fun LastParkingApp(
                         )
                     }
                 }
+
                 is MainEvent.NavigateTo -> {
                     // Handle navigation if needed
                 }
@@ -79,7 +80,7 @@ fun LastParkingApp(
                         viewModel.handleAction(action)
                     },
 
-                )
+                    )
             }
         }
     }

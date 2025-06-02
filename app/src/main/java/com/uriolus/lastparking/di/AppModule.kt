@@ -1,11 +1,7 @@
 package com.uriolus.lastparking.di
 
-import dagger.Module
-import dagger.hilt.InstallIn
-import dagger.hilt.components.SingletonComponent
+import org.koin.dsl.module
 
-@Module
-@InstallIn(SingletonComponent::class)
-object AppModule {
-    // Add application-wide bindings here
+val appModule = module {
+    // Add application-wide Koin bindings here
 }

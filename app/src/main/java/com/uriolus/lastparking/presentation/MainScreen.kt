@@ -117,9 +117,10 @@ fun MainScreen(
                 ) {
                     Text(
                         text = "No data",
-                        )
+                    )
                 }
             }
+
             is MainUiState.Loading -> {
                 Box(
                     modifier = Modifier
@@ -170,17 +171,13 @@ fun MainScreen(
                                 .padding(8.dp),
                             contentAlignment = Alignment.Center
                         ) {
-                            if (uiState is MainUiState.Success) {
-                                // Show map with location if available
-                                Icon(
-                                    imageVector = Icons.Default.LocationOn,
-                                    contentDescription = stringResource(R.string.map_location),
-                                    tint = Color.Gray,
-                                    modifier = Modifier.size(48.dp)
-                                )
-                            } else {
-                                Text("No location saved")
-                            }
+                            // Show map with location if available
+                            Icon(
+                                imageVector = Icons.Default.LocationOn,
+                                contentDescription = stringResource(R.string.map_location),
+                                tint = Color.Gray,
+                                modifier = Modifier.size(48.dp)
+                            )
                         }
 
                         Spacer(modifier = Modifier.height(16.dp))
@@ -199,15 +196,15 @@ fun MainScreen(
                         ) {
                             // Show saved image if available
 
-                                if (!uiState.parking.imageUri.isNullOrEmpty()) {
-                                    // TODO: Load image from URI
-                                } else {
-                                    Icon(
-                                        painter = painterResource(R.drawable.ic_camera),
-                                        contentDescription = "Parking image",
-                                        modifier = Modifier.fillMaxSize()
-                                    )
-                                }
+                            if (!uiState.parking.imageUri.isNullOrEmpty()) {
+                                // TODO: Load image from URI
+                            } else {
+                                Icon(
+                                    painter = painterResource(R.drawable.ic_camera),
+                                    contentDescription = "Parking image",
+                                    modifier = Modifier.fillMaxSize()
+                                )
+                            }
                         }
                     }
                 }

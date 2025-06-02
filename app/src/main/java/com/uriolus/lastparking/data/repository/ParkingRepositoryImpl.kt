@@ -5,11 +5,8 @@ import com.uriolus.lastparking.data.datasource.ParkingDatasource
 import com.uriolus.lastparking.domain.model.AppError
 import com.uriolus.lastparking.domain.model.Parking
 import com.uriolus.lastparking.domain.repository.ParkingRepository
-import javax.inject.Inject
-import javax.inject.Singleton
 
-@Singleton
-class ParkingRepositoryImpl @Inject constructor(
+class ParkingRepositoryImpl(
     private val localDataSource: ParkingDatasource
 ) : ParkingRepository {
     
