@@ -7,5 +7,5 @@ sealed class MainUiState {
     data object Empty : MainUiState()
     data object Loading : MainUiState()
     data class Error(val error: AppError) : MainUiState()
-    data class Success(val parking: Parking) : MainUiState()
+    data class Success(val parking: Parking, val hasChanges: Boolean = false) : MainUiState()
 }

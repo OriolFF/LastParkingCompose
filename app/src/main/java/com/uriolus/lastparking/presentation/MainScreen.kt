@@ -1,6 +1,7 @@
 package com.uriolus.lastparking.presentation
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -31,11 +32,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.uriolus.lastparking.R
+import com.uriolus.lastparking.domain.model.EmptyParking
 import com.uriolus.lastparking.domain.model.Parking
 import com.uriolus.lastparking.presentation.contract.MainAction
 import com.uriolus.lastparking.presentation.viewstate.MainUiState
+import com.uriolus.lastparking.ui.theme.LastParkingTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -69,39 +73,7 @@ fun MainScreen(
                 )
             )
         },
-        floatingActionButton = {
-            Column {
-                FloatingActionButton(
-                    onClick = { onAction(MainAction.AddNewLocation) },
-                    containerColor = MaterialTheme.colorScheme.primary
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Add,
-                        contentDescription = stringResource(R.string.add_location)
-                    )
-                }
-                Spacer(modifier = Modifier.height(8.dp))
-                FloatingActionButton(
-                    onClick = { onAction(MainAction.TakePicture) },
-                    containerColor = MaterialTheme.colorScheme.secondary
-                ) {
-                    Icon(
-                        painter = painterResource(R.drawable.ic_camera),
-                        contentDescription = "Take picture"
-                    )
-                }
-                Spacer(modifier = Modifier.height(8.dp))
-                FloatingActionButton(
-                    onClick = { onAction(MainAction.SaveCurrentLocation) },
-                    containerColor = MaterialTheme.colorScheme.tertiary
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.LocationOn,
-                        contentDescription = "Save current location"
-                    )
-                }
-            }
-        }
+        // No floatingActionButton here; FABs are handled in SuccessScreen
     ) { padding ->
         when (uiState) {
             is MainUiState.Empty -> Box(
@@ -124,7 +96,9 @@ fun MainScreen(
 
             is MainUiState.Success -> SuccessScreen(
                 modifier = modifier.padding(padding),
-                parking = uiState.parking
+                parking = uiState.parking,
+                hasChanges = uiState.hasChanges,
+                onAction = onAction
             )
         }
     }
@@ -145,13 +119,7 @@ private fun LoadingScreen() {
 private fun EmptyScreen() {
     SuccessScreen(
         modifier = Modifier.fillMaxSize(),
-        parking = Parking(
-            id = "0",
-            notes = "",
-            imageUri = null,
-            latitude = 0.0,
-            longitude = 0.0
-        )
+        parking = EmptyParking
     )
 }
 
@@ -171,24 +139,33 @@ private fun ErrorScreen(error: MainUiState.Error) {
 @Composable
 private fun SuccessScreen(
     modifier: Modifier = Modifier,
-    parking: Parking
+    parking: Parking,
+    hasChanges: Boolean = false,
+    onAction: (MainAction) -> Unit = {}
 ) {
     Column(
         modifier = modifier
             .fillMaxSize()
+            .padding(horizontal = 16.dp, vertical = 8.dp)
     ) {
-        // Map and Image Column - Takes 70% of screen height
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .weight(0.7f)
-                .padding(horizontal = 16.dp, vertical = 8.dp)
-        ) {
-            // Map Placeholder
+        Box(modifier = Modifier.fillMaxSize()) {
+            // Main content
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(end = 0.dp, bottom = 0.dp),
+            ) {
+                // Map and Image section (70% of height)
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(0.7f),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
             Box(
                 modifier = Modifier
-                    .weight(1f)
                     .fillMaxWidth()
+                    .weight(0.5f)
                     .background(
                         color = Color.LightGray.copy(alpha = 0.3f),
                         shape = RoundedCornerShape(8.dp)
@@ -196,7 +173,6 @@ private fun SuccessScreen(
                     .padding(8.dp),
                 contentAlignment = Alignment.Center
             ) {
-                // Show map with location if available
                 Icon(
                     imageVector = Icons.Default.LocationOn,
                     contentDescription = stringResource(R.string.map_location),
@@ -204,12 +180,10 @@ private fun SuccessScreen(
                     modifier = Modifier.size(48.dp)
                 )
             }
-            Spacer(modifier = Modifier.height(16.dp))
-            // Image Placeholder
             Box(
                 modifier = Modifier
-                    .weight(1f)
                     .fillMaxWidth()
+                    .weight(0.5f)
                     .background(
                         color = Color.LightGray.copy(alpha = 0.3f),
                         shape = RoundedCornerShape(8.dp)
@@ -217,19 +191,88 @@ private fun SuccessScreen(
                     .padding(8.dp),
                 contentAlignment = Alignment.Center
             ) {
-                // Show saved image if available
                 if (parking.imageUri.isNullOrEmpty()) {
                     // TODO: Load image from URI
-                } else {
                     Icon(
                         painter = painterResource(R.drawable.ic_camera),
                         contentDescription = "Parking image",
-                        modifier = Modifier.fillMaxSize()
+                        modifier = Modifier.size(48.dp)
                     )
+                } else {
+                    // TODO: Load image from URI
+                    Icon(
+                        painter = painterResource(R.drawable.ic_camera),
+                        contentDescription = "Parking image",
+                        modifier = Modifier.size(48.dp)
+                    )
+                }
+            }
+        }
+                // Address and Notes section (20% of height)
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(0.2f),
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Text(text = "Address: ${parking.address ?: "No address"}", style = MaterialTheme.typography.bodyLarge)
+                    Text(text = "Notes: ${parking.notes}", style = MaterialTheme.typography.bodyLarge)
+                }
+                // Spacer for bottom 10%
+                Spacer(modifier = Modifier.weight(0.1f))
+            }
+            // FAB logic
+            if (parking != EmptyParking) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(16.dp),
+                    contentAlignment = Alignment.BottomEnd
+                ) {
+                    if (hasChanges) {
+                        FloatingActionButton(
+                            onClick = { onAction(MainAction.SaveCurrentLocation) },
+                            containerColor = MaterialTheme.colorScheme.tertiary
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.LocationOn,
+                                contentDescription = "Save current location"
+                            )
+                        }
+                    } else {
+                        FloatingActionButton(
+                            onClick = { onAction(MainAction.AddNewLocation) },
+                            containerColor = MaterialTheme.colorScheme.primary
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Add,
+                                contentDescription = stringResource(R.string.add_location)
+                            )
+                        }
+                    }
                 }
             }
         }
     }
 }
 
+@Preview(showBackground = true)
+@Composable
+fun MainScreenPreview() {
+    LastParkingTheme {
+        MainScreen(
+            uiState = MainUiState.Success(
+                Parking(
+                    id = "0",
+                    notes = "Provisional notes",
+                    imageUri = null,
+                    latitude = 0.0,
+                    longitude = 0.0,
+                    address = "Provisional address"
+                )
+            ),
+            onAction = {}
+        )
+    }
+}
 

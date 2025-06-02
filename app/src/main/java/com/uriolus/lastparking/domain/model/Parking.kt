@@ -9,3 +9,11 @@ data class Parking(
     val date: String? = null,
     val imageUri: String? = null
 )
+val EmptyParking = Parking(
+    id = "empty",
+    notes = "",
+    latitude = 0.0,
+    longitude = 0.0,
+    address = "",
+    date = null,
+    imageUri = null)
