@@ -17,7 +17,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
-import com.uriolus.lastparking.presentation.contract.MainEvent
+import com.uriolus.lastparking.presentation.viewmodel.MainViewEvent
 import com.uriolus.lastparking.presentation.viewmodel.MainViewModel
 import org.koin.androidx.viewmodel.ext.android.viewModel
 import com.uriolus.lastparking.ui.theme.LastParkingTheme
@@ -47,7 +47,7 @@ fun LastParkingApp(
     LaunchedEffect(Unit) {
         viewModel.events.collect { event ->
             when (event) {
-                is MainEvent.ShowMessage -> {
+                is MainViewEvent.ShowMessage -> {
                     scope.launch {
                         snackbarHostState.showSnackbar(
                             message = event.message,
@@ -56,7 +56,7 @@ fun LastParkingApp(
                     }
                 }
 
-                is MainEvent.NavigateTo -> {
+                is MainViewEvent.NavigateTo -> {
                     // Handle navigation if needed
                 }
             }
