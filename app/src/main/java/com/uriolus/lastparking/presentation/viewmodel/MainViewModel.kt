@@ -34,7 +34,7 @@ class MainViewModel(
         when (action) {
             is MainViewAction.LoadLastParking -> loadLastParking()
             is MainViewAction.TakePicture -> takePicture()
-            is MainViewAction.AddNewParking -> addNewLocation()
+            is MainViewAction.AddNewParking -> addNewParking()
             is MainViewAction.SaveCurrentLocation -> saveCurrentLocation()
             is MainViewAction.UpdateNotes -> updateNotes(action.notes)
             is MainViewAction.UpdateAddress -> updateAddress(action.address)
@@ -62,7 +62,6 @@ class MainViewModel(
     private fun stateForEmptyParking(): MainUiState {
         return MainUiState.Success(
             parking = EmptyParking,
-            hasChanges = false,
             fabState = FABState(newParking = true, saveParking = false)
         )
 
@@ -71,7 +70,6 @@ class MainViewModel(
     private fun stateForLastParkingLoaded(parking: Parking): MainUiState {
         return MainUiState.Success(
             parking = parking,
-            hasChanges = false,
             fabState = FABState(newParking = true, saveParking = false)
         )
     }
@@ -90,10 +88,8 @@ class MainViewModel(
         }
     }
 
-    private fun addNewLocation() {
-        viewModelScope.launch {
-            _events.emit(MainViewEvent.ShowMessage("Add new location clicked"))
-        }
+    private fun addNewParking() {
+        _uiState.value = MainUiState.NewParking(parking = EmptyParking, gpsAccuracy = null)
     }
 
     private fun saveCurrentLocation() {

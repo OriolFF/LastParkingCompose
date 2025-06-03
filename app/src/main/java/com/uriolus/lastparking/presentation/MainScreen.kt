@@ -23,6 +23,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -80,10 +81,19 @@ fun MainScreen(
 
             is MainUiState.Error -> ErrorScreen(uiState, padding)
 
-            is MainUiState.Success -> SuccessScreen(
+            is MainUiState.Success -> ParkingScreen(
                 modifier = modifier.padding(padding),
                 parking = uiState.parking,
-                hasChanges = uiState.hasChanges,
+                hasChanges = false,
+                notModifiable = true,
+                onAction = onAction
+            )
+
+            is MainUiState.NewParking -> ParkingScreen(
+                modifier = modifier.padding(padding),
+                parking = uiState.parking,
+                hasChanges = false,
+                notModifiable = false,
                 onAction = onAction
             )
         }
@@ -118,10 +128,11 @@ private fun ErrorScreen(error: MainUiState.Error, padding: PaddingValues) {
 }
 
 @Composable
-private fun SuccessScreen(
+private fun ParkingScreen(
     modifier: Modifier = Modifier,
     parking: Parking,
     hasChanges: Boolean = false,
+    notModifiable: Boolean = false,
     onAction: (MainViewAction) -> Unit = {}
 ) {
     Column(
@@ -196,11 +207,30 @@ private fun SuccessScreen(
                         .weight(0.2f),
                     verticalArrangement = Arrangement.Center
                 ) {
-                    Text(
-                        text = "Address: ${parking.address ?: "No address"}",
-                        style = MaterialTheme.typography.bodyLarge
-                    )
-                    Text(text = "Notes: ${parking.notes}", style = MaterialTheme.typography.bodyLarge)
+                    if (notModifiable) {
+                        Text(
+                            text = "Address: ${parking.address ?: "No address"}",
+                            style = MaterialTheme.typography.bodyLarge,
+                        )
+                        Text(text = "Notes: ${parking.notes}", style = MaterialTheme.typography.bodyLarge)
+                    } else {
+                        TextField(
+                            value = parking.address ?: "",
+                            onValueChange = { newAddress -> 
+                                onAction(MainViewAction.UpdateAddress(newAddress))
+                            },
+                            label = { Text("Address") },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        TextField(
+                            value = parking.notes ?: "",
+                            onValueChange = { newNotes -> 
+                                onAction(MainViewAction.UpdateNotes(newNotes))
+                            },
+                            label = { Text("Notes") },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
                 }
                 // Spacer for bottom 10%
                 Spacer(modifier = Modifier.weight(0.1f))
@@ -259,4 +289,3 @@ fun MainScreenPreview() {
         )
     }
 }
-

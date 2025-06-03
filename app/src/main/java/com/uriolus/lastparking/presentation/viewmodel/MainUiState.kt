@@ -8,8 +8,13 @@ sealed class MainUiState {
     data class Error(val error: AppError) : MainUiState()
     data class Success(
         val parking: Parking,
-        val hasChanges: Boolean = false,
         val fabState: FABState = FABState()
+    ) : MainUiState()
+
+    data class NewParking(
+        val parking: Parking,
+        val fabState: FABState = FABState(),
+        val gpsAccuracy: Float?
     ) : MainUiState()
 }
 
