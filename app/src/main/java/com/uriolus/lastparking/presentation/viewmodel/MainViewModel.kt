@@ -4,11 +4,13 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import arrow.core.Either
 import com.uriolus.lastparking.domain.model.AppError
+import com.uriolus.lastparking.domain.model.EmptyParking
 import com.uriolus.lastparking.domain.model.Parking
 import com.uriolus.lastparking.domain.use_case.GetLastParkingUseCase
 import com.uriolus.lastparking.domain.use_case.SaveParkingUseCase
 import com.uriolus.lastparking.presentation.contract.MainAction
 import com.uriolus.lastparking.presentation.contract.MainEvent
+import com.uriolus.lastparking.presentation.viewstate.FABState
 import com.uriolus.lastparking.presentation.viewstate.MainUiState
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -22,7 +24,7 @@ class MainViewModel(
     private val saveParkingUseCase: SaveParkingUseCase
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow<MainUiState>(MainUiState.Empty)
+    private val _uiState = MutableStateFlow<MainUiState>(MainUiState.Loading)
     val uiState: StateFlow<MainUiState> = _uiState
 
     private val _events = MutableSharedFlow<MainEvent>()
@@ -50,15 +52,32 @@ class MainViewModel(
                 is Either.Left -> {
                     println("Error getting last parking: ${result.value}")
                     when (result.value) {
-                        AppError.ErrorNoPreviousParking -> _uiState.value = MainUiState.Empty
+                        AppError.ErrorNoPreviousParking -> _uiState.value = stateForEmptyParking()
                         else ->
                             _uiState.value = MainUiState.Error(result.value)
                     }
                 }
 
-                is Either.Right -> _uiState.value = MainUiState.Success(result.value)
+                is Either.Right -> _uiState.value = stateForLastParkingLoaded(result.value)
             }
         }
+    }
+
+    private fun stateForEmptyParking(): MainUiState {
+        return MainUiState.Success(
+            parking = EmptyParking,
+            hasChanges = false,
+            fabState = FABState(newParking = true, saveParking = false)
+        )
+
+    }
+
+    private fun stateForLastParkingLoaded(parking: Parking): MainUiState {
+        return MainUiState.Success(
+            parking = parking,
+            hasChanges = false,
+            fabState = FABState(newParking = true, saveParking = false)
+        )
     }
 
     private fun saveParking(parking: Parking) = viewModelScope.launch {

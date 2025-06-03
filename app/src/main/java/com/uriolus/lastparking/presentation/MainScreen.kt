@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -74,25 +75,11 @@ fun MainScreen(
             )
         },
         // No floatingActionButton here; FABs are handled in SuccessScreen
-    ) { padding ->
+    ) { padding: PaddingValues ->
         when (uiState) {
-            is MainUiState.Empty -> Box(
-                modifier = Modifier
-                    .padding(padding)
-                    .fillMaxSize()
-            ) { EmptyScreen() }
+            is MainUiState.Loading -> LoadingScreen(padding)
 
-            is MainUiState.Loading -> Box(
-                modifier = Modifier
-                    .padding(padding)
-                    .fillMaxSize()
-            ) { LoadingScreen() }
-
-            is MainUiState.Error -> Box(
-                modifier = Modifier
-                    .padding(padding)
-                    .fillMaxSize()
-            ) { ErrorScreen(uiState) }
+            is MainUiState.Error -> ErrorScreen(uiState, padding)
 
             is MainUiState.Success -> SuccessScreen(
                 modifier = modifier.padding(padding),
@@ -106,9 +93,11 @@ fun MainScreen(
 
 
 @Composable
-private fun LoadingScreen() {
+private fun LoadingScreen(padding: PaddingValues) {
     Box(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier
+            .padding(padding)
+            .fillMaxSize(),
         contentAlignment = Alignment.Center
     ) {
         CircularProgressIndicator()
@@ -116,17 +105,11 @@ private fun LoadingScreen() {
 }
 
 @Composable
-private fun EmptyScreen() {
-    SuccessScreen(
-        modifier = Modifier.fillMaxSize(),
-        parking = EmptyParking
-    )
-}
-
-@Composable
-private fun ErrorScreen(error: MainUiState.Error) {
+private fun ErrorScreen(error: MainUiState.Error, padding: PaddingValues) {
     Box(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(padding),
         contentAlignment = Alignment.Center
     ) {
         Text(
@@ -162,52 +145,52 @@ private fun SuccessScreen(
                         .weight(0.7f),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(0.5f)
-                    .background(
-                        color = Color.LightGray.copy(alpha = 0.3f),
-                        shape = RoundedCornerShape(8.dp)
-                    )
-                    .padding(8.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = Icons.Default.LocationOn,
-                    contentDescription = stringResource(R.string.map_location),
-                    tint = Color.Gray,
-                    modifier = Modifier.size(48.dp)
-                )
-            }
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(0.5f)
-                    .background(
-                        color = Color.LightGray.copy(alpha = 0.3f),
-                        shape = RoundedCornerShape(8.dp)
-                    )
-                    .padding(8.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                if (parking.imageUri.isNullOrEmpty()) {
-                    // TODO: Load image from URI
-                    Icon(
-                        painter = painterResource(R.drawable.ic_camera),
-                        contentDescription = "Parking image",
-                        modifier = Modifier.size(48.dp)
-                    )
-                } else {
-                    // TODO: Load image from URI
-                    Icon(
-                        painter = painterResource(R.drawable.ic_camera),
-                        contentDescription = "Parking image",
-                        modifier = Modifier.size(48.dp)
-                    )
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(0.5f)
+                            .background(
+                                color = Color.LightGray.copy(alpha = 0.3f),
+                                shape = RoundedCornerShape(8.dp)
+                            )
+                            .padding(8.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.LocationOn,
+                            contentDescription = stringResource(R.string.map_location),
+                            tint = Color.Gray,
+                            modifier = Modifier.size(48.dp)
+                        )
+                    }
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(0.5f)
+                            .background(
+                                color = Color.LightGray.copy(alpha = 0.3f),
+                                shape = RoundedCornerShape(8.dp)
+                            )
+                            .padding(8.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        if (parking.imageUri.isNullOrEmpty()) {
+                            // TODO: Load image from URI
+                            Icon(
+                                painter = painterResource(R.drawable.ic_camera),
+                                contentDescription = "Parking image",
+                                modifier = Modifier.size(48.dp)
+                            )
+                        } else {
+                            // TODO: Load image from URI
+                            Icon(
+                                painter = painterResource(R.drawable.ic_camera),
+                                contentDescription = "Parking image",
+                                modifier = Modifier.size(48.dp)
+                            )
+                        }
+                    }
                 }
-            }
-        }
                 // Address and Notes section (20% of height)
                 Column(
                     modifier = Modifier
@@ -215,7 +198,10 @@ private fun SuccessScreen(
                         .weight(0.2f),
                     verticalArrangement = Arrangement.Center
                 ) {
-                    Text(text = "Address: ${parking.address ?: "No address"}", style = MaterialTheme.typography.bodyLarge)
+                    Text(
+                        text = "Address: ${parking.address ?: "No address"}",
+                        style = MaterialTheme.typography.bodyLarge
+                    )
                     Text(text = "Notes: ${parking.notes}", style = MaterialTheme.typography.bodyLarge)
                 }
                 // Spacer for bottom 10%
