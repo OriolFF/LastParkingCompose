@@ -1,4 +1,4 @@
-package com.uriolus.lastparking.presentation.viewstate
+package com.uriolus.lastparking.presentation.viewmodel
 
 import com.uriolus.lastparking.domain.model.AppError
 import com.uriolus.lastparking.domain.model.Parking

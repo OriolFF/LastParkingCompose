@@ -8,10 +8,6 @@ import com.uriolus.lastparking.domain.model.EmptyParking
 import com.uriolus.lastparking.domain.model.Parking
 import com.uriolus.lastparking.domain.use_case.GetLastParkingUseCase
 import com.uriolus.lastparking.domain.use_case.SaveParkingUseCase
-import com.uriolus.lastparking.presentation.contract.MainAction
-import com.uriolus.lastparking.presentation.contract.MainEvent
-import com.uriolus.lastparking.presentation.viewstate.FABState
-import com.uriolus.lastparking.presentation.viewstate.MainUiState
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -27,21 +23,21 @@ class MainViewModel(
     private val _uiState = MutableStateFlow<MainUiState>(MainUiState.Loading)
     val uiState: StateFlow<MainUiState> = _uiState
 
-    private val _events = MutableSharedFlow<MainEvent>()
+    private val _events = MutableSharedFlow<MainViewEvent>()
     val events = _events.asSharedFlow()
 
     init {
-        handleAction(MainAction.LoadLastParking)
+        handleAction(MainViewAction.LoadLastParking)
     }
 
-    fun handleAction(action: MainAction) {
+    fun handleAction(action: MainViewAction) {
         when (action) {
-            is MainAction.LoadLastParking -> loadLastParking()
-            is MainAction.TakePicture -> takePicture()
-            is MainAction.AddNewLocation -> addNewLocation()
-            is MainAction.SaveCurrentLocation -> saveCurrentLocation()
-            is MainAction.UpdateNotes -> updateNotes(action.notes)
-            is MainAction.UpdateAddress -> updateAddress(action.address)
+            is MainViewAction.LoadLastParking -> loadLastParking()
+            is MainViewAction.TakePicture -> takePicture()
+            is MainViewAction.AddNewParking -> addNewLocation()
+            is MainViewAction.SaveCurrentLocation -> saveCurrentLocation()
+            is MainViewAction.UpdateNotes -> updateNotes(action.notes)
+            is MainViewAction.UpdateAddress -> updateAddress(action.address)
         }
     }
 
@@ -90,19 +86,19 @@ class MainViewModel(
 
     private fun takePicture() {
         viewModelScope.launch {
-            _events.emit(MainEvent.ShowMessage("Take picture clicked"))
+            _events.emit(MainViewEvent.ShowMessage("Take picture clicked"))
         }
     }
 
     private fun addNewLocation() {
         viewModelScope.launch {
-            _events.emit(MainEvent.ShowMessage("Add new location clicked"))
+            _events.emit(MainViewEvent.ShowMessage("Add new location clicked"))
         }
     }
 
     private fun saveCurrentLocation() {
         viewModelScope.launch {
-            _events.emit(MainEvent.ShowMessage("Save current location clicked"))
+            _events.emit(MainViewEvent.ShowMessage("Save current location clicked"))
         }
     }
 

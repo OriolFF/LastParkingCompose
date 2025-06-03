@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -38,8 +37,8 @@ import androidx.compose.ui.unit.dp
 import com.uriolus.lastparking.R
 import com.uriolus.lastparking.domain.model.EmptyParking
 import com.uriolus.lastparking.domain.model.Parking
-import com.uriolus.lastparking.presentation.contract.MainAction
-import com.uriolus.lastparking.presentation.viewstate.MainUiState
+import com.uriolus.lastparking.presentation.viewmodel.MainViewAction
+import com.uriolus.lastparking.presentation.viewmodel.MainUiState
 import com.uriolus.lastparking.ui.theme.LastParkingTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -47,7 +46,7 @@ import com.uriolus.lastparking.ui.theme.LastParkingTheme
 fun MainScreen(
     modifier: Modifier = Modifier,
     uiState: MainUiState,
-    onAction: (MainAction) -> Unit,
+    onAction: (MainViewAction) -> Unit,
 ) {
     Scaffold(
         topBar = {
@@ -91,7 +90,6 @@ fun MainScreen(
     }
 }
 
-
 @Composable
 private fun LoadingScreen(padding: PaddingValues) {
     Box(
@@ -124,7 +122,7 @@ private fun SuccessScreen(
     modifier: Modifier = Modifier,
     parking: Parking,
     hasChanges: Boolean = false,
-    onAction: (MainAction) -> Unit = {}
+    onAction: (MainViewAction) -> Unit = {}
 ) {
     Column(
         modifier = modifier
@@ -217,7 +215,7 @@ private fun SuccessScreen(
                 ) {
                     if (hasChanges) {
                         FloatingActionButton(
-                            onClick = { onAction(MainAction.SaveCurrentLocation) },
+                            onClick = { onAction(MainViewAction.SaveCurrentLocation) },
                             containerColor = MaterialTheme.colorScheme.tertiary
                         ) {
                             Icon(
@@ -227,12 +225,12 @@ private fun SuccessScreen(
                         }
                     } else {
                         FloatingActionButton(
-                            onClick = { onAction(MainAction.AddNewLocation) },
+                            onClick = { onAction(MainViewAction.AddNewParking) },
                             containerColor = MaterialTheme.colorScheme.primary
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Add,
-                                contentDescription = stringResource(R.string.add_location)
+                                contentDescription = stringResource(R.string.add_parking)
                             )
                         }
                     }

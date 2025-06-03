@@ -2,14 +2,14 @@
     <string name="app_name">LastParking</string>
     
     <!-- Main Screen -->
-    <string name="add_location">Add Location</string>
+    <string name="add_parking">Add Location</string>
     <string name="map_location">Map Location</string>
     <string name="take_photo">Take Photo</string>
     <string name="address">Address</string>
     <string name="comment">Comment</string>
     <string name="menu">Menu</string>
     <string name="save">Save</string>
-    <string name="saving">Saving...</string>
+    <string name="saving">Saving…</string>
     <string name="location_saved">Location saved</string>
     <string name="error_saving_location">Error saving location</string>
     <string name="no_location_saved">No location saved yet</string>
