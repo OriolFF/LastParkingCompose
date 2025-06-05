@@ -29,4 +29,29 @@
     <string name="preview_notes_provisional">Provisional notes</string>
     <string name="preview_address_provisional">Provisional address</string>
     <string name="text_no_address_available">No address available</string>
+    <string name="permission_denied_message_location">Location permission is required to save the current parking spot. Please enable it in settings.</string>
+    <!-- Permissions -->
+    <string name="permission_location_rationale_title">Location Permission Needed</string>
+    <string name="permission_location_rationale_message">To find and save your car\'s current location, this app needs access to your device\'s location. Please grant the permission.</string>
+    <string name="permission_location_denied_title">Location Permission Denied</string>
+    <string name="permission_location_denied_message">Without location permission, the app cannot automatically find your car\'s current location. You can grant the permission from app settings or try again.</string>
+    <string name="permission_button_grant">Grant</string>
+    <string name="permission_button_retry">Try Again</string>
+    <string name="permission_button_cancel">Cancel</string>
+    <string name="permission_button_no_thanks">No, Thanks</string>
+    <string name="dialog_button_cancel">Cancel</string>
+    <string name="dialog_button_open_settings">Open Settings</string>
+
+    <string name="title_add_new_parking">Add New Parking</string>
+    <string name="content_description_back">Back</string>
+    <string name="label_take_picture">Take Picture</string>
+    <string name="label_gps_accuracy">GPS Accuracy: %.1f m</string>
+    <string name="label_gps_accuracy_unavailable">GPS Accuracy: Acquiring...</string>
+    <string name="label_dynamic_map_placeholder">Dynamic Map (Coming Soon)</string>
+
+    <string name="captured_image_description">Captured parking image</string>
+    <string name="current_location_marker_title">Current Location</string>
+    <string name="map_waiting_for_location">Waiting for location to display map...</string>
+    <string name="requesting_permission">Requesting permission...</string>
+    <string name="take_picture_button_label">Take Picture</string>
 </resources>

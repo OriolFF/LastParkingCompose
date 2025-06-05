@@ -17,6 +17,11 @@ sealed class MainUiState {
         val fabState: FABState = FABState(newParking = true, saveParking = true), // Enable save by default
         val gpsAccuracy: Float? // Can be updated with accuracy from location updates
     ) : MainUiState()
+
+    // New states for permission dialogs
+    data object ShowLocationPermissionRationale : MainUiState()
+    data object ShowLocationPermissionPermanentlyDenied : MainUiState()
+    data object PermissionRequiredButNotGranted : MainUiState() // Fallback state
 }
 
 data class FABState(val newParking: Boolean = false, val saveParking: Boolean = false)

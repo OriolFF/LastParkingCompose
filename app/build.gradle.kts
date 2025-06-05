@@ -1,7 +1,6 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
-    kotlin("kapt")
 }
 
 android {
@@ -36,9 +35,6 @@ android {
     }
     composeOptions {
         kotlinCompilerExtensionVersion = libs.versions.composeCompiler.get()
-    }
-    kapt {
-        correctErrorTypes = true
     }
     
     // Ensure the kapt generated folder is included in the classpath
@@ -76,4 +72,11 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
+
+    // Coil for image loading
+    implementation("io.coil-kt:coil-compose:2.6.0")
+
+    // Google Maps Compose
+    implementation("com.google.maps.android:maps-compose:4.3.3") // Check for latest version
+    implementation("com.google.android.gms:play-services-maps:18.2.0")
 }

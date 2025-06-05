@@ -10,6 +10,7 @@ import com.uriolus.lastparking.domain.model.ParkingLocation
 import com.uriolus.lastparking.domain.use_case.GetLastParkingUseCase
 import com.uriolus.lastparking.domain.use_case.SaveParkingUseCase
 import com.uriolus.lastparking.domain.use_case.GetLocationUpdatesUseCase
+import com.uriolus.lastparking.domain.use_case.GetAddressFromLocationUseCase
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -18,11 +19,13 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.launch
 
+private const val GOOD_ACCURACY_THRESHOLD = 10.0f // meters
 
 class MainViewModel(
     private val getLastParkingUseCase: GetLastParkingUseCase,
     private val saveParkingUseCase: SaveParkingUseCase,
-    private val getLocationUpdatesUseCase: GetLocationUpdatesUseCase
+    private val getLocationUpdatesUseCase: GetLocationUpdatesUseCase,
+    private val getAddressFromLocationUseCase: GetAddressFromLocationUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<MainUiState>(MainUiState.Loading)
@@ -32,6 +35,7 @@ class MainViewModel(
     val events = _events.asSharedFlow()
 
     private var locationUpdatesJob: Job? = null
+    private var addressFetchAttempted: Boolean = false
 
     init {
         handleAction(MainViewAction.LoadLastParking)
@@ -40,45 +44,114 @@ class MainViewModel(
     fun handleAction(action: MainViewAction) {
         when (action) {
             is MainViewAction.LoadLastParking -> loadLastParking()
-            is MainViewAction.TakePicture -> takePicture()
+            is MainViewAction.LocationPermissionGranted -> loadLastParking()
+            is MainViewAction.TakePicture -> { /* TODO: Decide if this action is needed or if UI handles intent directly */ }
             is MainViewAction.AddNewParkingClicked -> {
-                _uiState.value = MainUiState.RequestingPermission
+                // Permissions are now handled by the MainScreen before this action is sent.
+                // Directly proceed to get location.
+                addressFetchAttempted = false // Reset flag
+                _uiState.value = MainUiState.NewParking(
+                    parking = EmptyParking.copy(), // Start with a fresh parking object
+                    gpsAccuracy = null // Initial accuracy is unknown
+                )
+                startCollectingLocationUpdates()
             }
-            is MainViewAction.LocationPermissionResult -> {
-                if (action.granted) {
-                    startCollectingLocationUpdates()
-                } else {
-                    _uiState.value = MainUiState.Error(AppError.LocationPermissionDenied)
+
+            is MainViewAction.LocationPermissionRequestCancelled -> {
+                // This might still be relevant if a user cancels a system dialog if that's possible
+                // For now, treat as permission not granted, leading to fallback state.
+                _uiState.value = MainUiState.PermissionRequiredButNotGranted
+                viewModelScope.launch {
+                    _events.emit(MainViewEvent.ShowMessage("Location permission request cancelled"))
                 }
             }
+
+            is MainViewAction.LocationPermissionDenied -> {
+                if (action.shouldShowRationale) {
+                    _uiState.value = MainUiState.ShowLocationPermissionRationale
+                } else {
+                    _uiState.value = MainUiState.ShowLocationPermissionPermanentlyDenied
+                }
+            }
+
+            is MainViewAction.RequestLocationPermissionAgain -> {
+                _uiState.value = MainUiState.RequestingPermission
+            }
+
+            is MainViewAction.DismissPermissionDialogs -> {
+                _uiState.value = MainUiState.PermissionRequiredButNotGranted
+            }
+
             is MainViewAction.SaveCurrentLocation -> saveCurrentLocation()
             is MainViewAction.UpdateNotes -> updateNotes(action.notes)
             is MainViewAction.UpdateAddress -> updateAddress(action.address)
-            is MainViewAction.UpdateLocation -> updateLocation(action.location)
+            is MainViewAction.ImagePathUpdated -> updateImagePath(action.imageUri)
             is MainViewAction.CancelAddNewParking -> cancelAddNewParking()
         }
     }
 
     private fun startCollectingLocationUpdates() {
         locationUpdatesJob?.cancel()
-        _uiState.value = MainUiState.NewParking(
-            parking = EmptyParking,
-            gpsAccuracy = null
-        )
         locationUpdatesJob = viewModelScope.launch {
-            getLocationUpdatesUseCase()
-                .catch { e ->
-                    _uiState.value = MainUiState.Error(AppError.ErrorLoading("Location Flow Error: ${e.localizedMessage}"))
+            getLocationUpdatesUseCase().fold(
+                ifLeft = { appError ->
+                    when (appError) {
+                        is AppError.LocationPermissionDenied -> {
+                            _uiState.value = MainUiState.PermissionRequiredButNotGranted
+                        }
+                        else -> {
+                            _uiState.value =
+                                MainUiState.Error(AppError.ErrorLoading("Failed to start location updates: ${appError::class.simpleName}"))
+                        }
+                    }
+                },
+                ifRight = { locationFlow ->
+                    locationFlow
+                        .catch { e -> // Catch errors during flow emission
+                            _uiState.value =
+                                MainUiState.Error(AppError.ErrorLoading("Location Flow Error: ${e.localizedMessage}"))
+                        }
+                        .collect { newLocation ->
+                            val currentState = _uiState.value
+                            if (currentState is MainUiState.NewParking) {
+                                _uiState.value = currentState.copy(
+                                    parking = currentState.parking.copy(location = newLocation),
+                                    gpsAccuracy = newLocation.accuracy
+                                )
+                                // Check accuracy and fetch address if needed
+                                if (newLocation.accuracy != null && newLocation.accuracy <= GOOD_ACCURACY_THRESHOLD && !addressFetchAttempted && currentState.parking.address.isNullOrEmpty()) {
+                                    addressFetchAttempted = true
+                                    fetchAddressForLocation(newLocation)
+                                }
+                            }
+                        }
                 }
-                .collect { newLocation ->
-                    handleAction(MainViewAction.UpdateLocation(newLocation))
+            )
+        }
+    }
+
+    private fun fetchAddressForLocation(location: ParkingLocation) {
+        viewModelScope.launch {
+            getAddressFromLocationUseCase(location).fold(
+                ifLeft = {
+                    // Handle error, e.g., show a toast or log
+                    _events.emit(MainViewEvent.ShowMessage("Could not fetch address: ${it::class.simpleName}"))
+                },
+                ifRight = { address ->
+                    val currentState = _uiState.value
+                    if (currentState is MainUiState.NewParking && address != null) {
+                        _uiState.value = currentState.copy(
+                            parking = currentState.parking.copy(address = address)
+                        )
+                    }
                 }
+            )
         }
     }
 
     private fun cancelAddNewParking() {
         locationUpdatesJob?.cancel()
-        locationUpdatesJob = null
+        addressFetchAttempted = false // Reset flag
         loadLastParking()
     }
 
@@ -89,17 +162,21 @@ class MainViewModel(
                 is Either.Left -> {
                     when (result.value) {
                         AppError.ErrorNoPreviousParking -> _uiState.value = stateForEmptyParking()
-                        AppError.LocationPermissionDenied -> _uiState.value = MainUiState.Error(AppError.LocationPermissionDenied)
-                        else ->
-                            _uiState.value = MainUiState.Error(result.value)
+                        AppError.LocationPermissionDenied -> _uiState.value =
+                            MainUiState.RequestingPermission // Changed to trigger UI permission flow
+
+                        else -> _uiState.value = MainUiState.Error(result.value)
                     }
                 }
+
                 is Either.Right -> _uiState.value = stateForLastParkingLoaded(result.value)
             }
         }
     }
 
     private fun stateForEmptyParking(): MainUiState {
+        // If there's no parking, but we also need permission, RequestingPermission state should take precedence.
+        // This function is called after permission checks in loadLastParking.
         return MainUiState.Success(
             parking = EmptyParking,
             fabState = FABState(newParking = true, saveParking = false)
@@ -154,30 +231,29 @@ class MainViewModel(
     }
 
     private fun updateAddress(address: String) {
-        val currentUiState = _uiState.value
-        when (currentUiState) {
+        when (val currentUiState = _uiState.value) {
             is MainUiState.Success -> {
                 _uiState.value = currentUiState.copy(
                     parking = currentUiState.parking.copy(address = address),
                     fabState = currentUiState.fabState.copy(saveParking = true)
                 )
             }
+
             is MainUiState.NewParking -> {
                 _uiState.value = currentUiState.copy(
                     parking = currentUiState.parking.copy(address = address)
                 )
             }
+
             else -> {}
         }
     }
 
-    private fun updateLocation(location: ParkingLocation) {
-        val currentUiState = _uiState.value
-        if (currentUiState is MainUiState.NewParking) {
-            _uiState.value = currentUiState.copy(
-                parking = currentUiState.parking.copy(
-                    location = ParkingLocation(location.latitude, location.longitude)
-                )
+    private fun updateImagePath(imageUri: String?) {
+        val currentState = _uiState.value
+        if (currentState is MainUiState.NewParking) {
+            _uiState.value = currentState.copy(
+                parking = currentState.parking.copy(imageUri = imageUri)
             )
         }
     }
