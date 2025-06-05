@@ -1,19 +1,21 @@
 [versions]
-agp = "8.10.1"
+agp = "8.1.2"
 datastorePreferences = "1.1.7"
 koinAndroid = "3.5.3"
 koinAndroidxCompose = "3.5.3"
-kotlin = "2.0.21"
-coreKtx = "1.16.0"
+kotlin = "1.9.22"
+coreKtx = "1.12.0"
 junit = "4.13.2"
 junitVersion = "1.2.1"
 espressoCore = "3.6.1"
 kotlinxSerializationJson = "1.7.3"
-lifecycleRuntimeKtx = "2.9.0"
-activityCompose = "1.10.1"
-composeBom = "2025.05.01"
-arrow = "2.0.0"
+lifecycleRuntimeKtx = "2.6.2"
+activityCompose = "1.8.0"
+composeBom = "2024.04.01"
+arrow = "1.2.1"
 hilt = "2.55"
+playServicesLocation = "21.2.0"
+composeCompiler = "1.5.10"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -35,9 +37,9 @@ arrow-core = { group = "io.arrow-kt", name = "arrow-core", version.ref = "arrow"
 koin-android = { module = "io.insert-koin:koin-android", version.ref = "koinAndroid" }
 koin-androidx-compose = { module = "io.insert-koin:koin-androidx-compose", version.ref = "koinAndroidxCompose" }
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinxSerializationJson" }
+play-services-location = { module = "com.google.android.gms:play-services-location", version.ref = "playServicesLocation" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
-kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 hilt = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }

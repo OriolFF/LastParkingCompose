@@ -1,46 +1,66 @@
 package com.uriolus.lastparking.presentation
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.lerp
+import com.uriolus.lastparking.R
+import com.uriolus.lastparking.domain.model.EmptyParking
+import com.uriolus.lastparking.domain.model.Parking
+import com.uriolus.lastparking.domain.model.ParkingLocation
+import com.uriolus.lastparking.domain.repository.LocationRepository
+import com.uriolus.lastparking.presentation.viewmodel.MainViewAction
+import com.uriolus.lastparking.presentation.viewmodel.MainUiState
+import com.uriolus.lastparking.ui.theme.LastParkingTheme
+import org.koin.androidx.compose.get
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Divider
+import androidx.compose.material3.ElevatedButton
+import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.draw.shadow
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
-import com.uriolus.lastparking.R
-import com.uriolus.lastparking.domain.model.EmptyParking
-import com.uriolus.lastparking.domain.model.Parking
-import com.uriolus.lastparking.presentation.viewmodel.MainViewAction
-import com.uriolus.lastparking.presentation.viewmodel.MainUiState
-import com.uriolus.lastparking.ui.theme.LastParkingTheme
+import androidx.compose.material3.Text
+import androidx.compose.foundation.background
+import androidx.compose.material3.CircularProgressIndicator
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -49,6 +69,16 @@ fun MainScreen(
     uiState: MainUiState,
     onAction: (MainViewAction) -> Unit,
 ) {
+    val locationRepository: LocationRepository = get()
+
+    LaunchedEffect(uiState) {
+        if (uiState is MainUiState.NewParking) {
+            locationRepository.getLocationUpdates().collect { location ->
+                onAction(MainViewAction.UpdateLocation(location))
+            }
+        }
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -207,30 +237,11 @@ private fun ParkingScreen(
                         .weight(0.2f),
                     verticalArrangement = Arrangement.Center
                 ) {
-                    if (notModifiable) {
-                        Text(
-                            text = "Address: ${parking.address ?: "No address"}",
-                            style = MaterialTheme.typography.bodyLarge,
-                        )
-                        Text(text = "Notes: ${parking.notes}", style = MaterialTheme.typography.bodyLarge)
-                    } else {
-                        TextField(
-                            value = parking.address ?: "",
-                            onValueChange = { newAddress -> 
-                                onAction(MainViewAction.UpdateAddress(newAddress))
-                            },
-                            label = { Text("Address") },
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                        TextField(
-                            value = parking.notes ?: "",
-                            onValueChange = { newNotes -> 
-                                onAction(MainViewAction.UpdateNotes(newNotes))
-                            },
-                            label = { Text("Notes") },
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                    }
+                    ParkingScreen(
+                        parking = parking,
+                        notModifiable = notModifiable,
+                        onAction = onAction
+                    )
                 }
                 // Spacer for bottom 10%
                 Spacer(modifier = Modifier.weight(0.1f))
@@ -270,6 +281,44 @@ private fun ParkingScreen(
     }
 }
 
+@Composable
+private fun ParkingScreen(
+    parking: Parking,
+    notModifiable: Boolean,
+    onAction: (MainViewAction) -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth(),
+        verticalArrangement = Arrangement.Center
+    ) {
+        if (notModifiable) {
+            Text(
+                text = "Address: ${parking.address ?: "No address"}",
+                style = MaterialTheme.typography.bodyLarge,
+            )
+            Text(text = "Notes: ${parking.notes}", style = MaterialTheme.typography.bodyLarge)
+        } else {
+            TextField(
+                value = parking.address ?: "",
+                onValueChange = { newAddress ->
+                    onAction(MainViewAction.UpdateAddress(newAddress))
+                },
+                label = { Text("Address") },
+                modifier = Modifier.fillMaxWidth()
+            )
+            TextField(
+                value = parking.notes ?: "",
+                onValueChange = { newNotes ->
+                    onAction(MainViewAction.UpdateNotes(newNotes))
+                },
+                label = { Text("Notes") },
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
+    }
+}
+
 @Preview(showBackground = true)
 @Composable
 fun MainScreenPreview() {
@@ -280,8 +329,7 @@ fun MainScreenPreview() {
                     id = "0",
                     notes = "Provisional notes",
                     imageUri = null,
-                    latitude = 0.0,
-                    longitude = 0.0,
+                    location = ParkingLocation(0.0, 0.0),
                     address = "Provisional address"
                 )
             ),

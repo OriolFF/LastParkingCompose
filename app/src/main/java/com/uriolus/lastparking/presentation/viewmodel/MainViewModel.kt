@@ -6,6 +6,7 @@ import arrow.core.Either
 import com.uriolus.lastparking.domain.model.AppError
 import com.uriolus.lastparking.domain.model.EmptyParking
 import com.uriolus.lastparking.domain.model.Parking
+import com.uriolus.lastparking.domain.model.ParkingLocation
 import com.uriolus.lastparking.domain.use_case.GetLastParkingUseCase
 import com.uriolus.lastparking.domain.use_case.SaveParkingUseCase
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -38,6 +39,7 @@ class MainViewModel(
             is MainViewAction.SaveCurrentLocation -> saveCurrentLocation()
             is MainViewAction.UpdateNotes -> updateNotes(action.notes)
             is MainViewAction.UpdateAddress -> updateAddress(action.address)
+            is MainViewAction.UpdateLocation -> updateLocation(action.location)
         }
     }
 
@@ -113,6 +115,22 @@ class MainViewModel(
             _uiState.value = currentState.copy(
                 parking = currentState.parking.copy(address = address)
             )
+        }
+    }
+
+    private fun updateLocation(location: ParkingLocation) {
+        viewModelScope.launch {
+            when (val currentState = _uiState.value) {
+                is MainUiState.Success -> {
+                    _uiState.value = currentState.copy(
+                        parking = currentState.parking.copy(
+                            location = location
+                        )
+                    )
+                }
+
+                else -> {}
+            }
         }
     }
 }
