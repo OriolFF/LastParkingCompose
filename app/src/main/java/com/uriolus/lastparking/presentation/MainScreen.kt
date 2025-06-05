@@ -1,66 +1,51 @@
 package com.uriolus.lastparking.presentation
 
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.LayoutDirection
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.lerp
-import com.uriolus.lastparking.R
-import com.uriolus.lastparking.domain.model.EmptyParking
-import com.uriolus.lastparking.domain.model.Parking
-import com.uriolus.lastparking.domain.model.ParkingLocation
-import com.uriolus.lastparking.domain.repository.LocationRepository
-import com.uriolus.lastparking.presentation.viewmodel.MainViewAction
-import com.uriolus.lastparking.presentation.viewmodel.MainUiState
-import com.uriolus.lastparking.ui.theme.LastParkingTheme
-import org.koin.androidx.compose.get
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.RowScope
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
-import androidx.compose.foundation.layout.wrapContentSize
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Divider
-import androidx.compose.material3.ElevatedButton
-import androidx.compose.material3.FilledTonalButton
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.TextButton
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.draw.shadow
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.Text
-import androidx.compose.foundation.background
-import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import com.uriolus.lastparking.R
+import com.uriolus.lastparking.domain.model.EmptyParking
+import com.uriolus.lastparking.domain.model.Parking
+import com.uriolus.lastparking.domain.model.ParkingLocation
+import com.uriolus.lastparking.domain.repository.LocationRepository
+import com.uriolus.lastparking.presentation.viewmodel.MainUiState
+import com.uriolus.lastparking.presentation.viewmodel.MainViewAction
+import com.uriolus.lastparking.ui.theme.LastParkingTheme
 import org.koin.compose.koinInject
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -102,7 +87,8 @@ fun MainScreen(
                     containerColor = MaterialTheme.colorScheme.primaryContainer,
                     titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
                     actionIconContentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                )
+                ),
+                windowInsets = WindowInsets(top = 0.dp)
             )
         },
         // No floatingActionButton here; FABs are handled in SuccessScreen
@@ -154,7 +140,7 @@ private fun ErrorScreen(error: MainUiState.Error, padding: PaddingValues) {
         contentAlignment = Alignment.Center
     ) {
         Text(
-            text = "Error: ${error.error}",
+            text = stringResource(R.string.error_message_generic, error.error.toString()),
             color = MaterialTheme.colorScheme.error
         )
     }
@@ -220,14 +206,14 @@ private fun ParkingScreen(
                             // TODO: Load image from URI
                             Icon(
                                 painter = painterResource(R.drawable.ic_camera),
-                                contentDescription = "Parking image",
+                                contentDescription = stringResource(R.string.content_description_parking_image),
                                 modifier = Modifier.size(48.dp)
                             )
                         } else {
                             // TODO: Load image from URI
                             Icon(
                                 painter = painterResource(R.drawable.ic_camera),
-                                contentDescription = "Parking image",
+                                contentDescription = stringResource(R.string.content_description_parking_image),
                                 modifier = Modifier.size(48.dp)
                             )
                         }
@@ -264,7 +250,7 @@ private fun ParkingScreen(
                         ) {
                             Icon(
                                 imageVector = Icons.Default.LocationOn,
-                                contentDescription = "Save current location"
+                                contentDescription = stringResource(R.string.content_description_save_location)
                             )
                         }
                     } else {
@@ -297,26 +283,30 @@ private fun ParkingScreen(
     ) {
         if (notModifiable) {
             Text(
-                text = "Address: ${parking.address ?: "No address"}",
+                text = stringResource(R.string.label_address) + ": ${parking.address ?: stringResource(R.string.text_no_address_available)}",
                 style = MaterialTheme.typography.bodyLarge,
             )
-            Text(text = "Notes: ${parking.notes}", style = MaterialTheme.typography.bodyLarge)
+            Text(text = stringResource(R.string.label_notes) + ": ${parking.notes}", style = MaterialTheme.typography.bodyLarge)
         } else {
             TextField(
                 value = parking.address ?: "",
                 onValueChange = { newAddress ->
                     onAction(MainViewAction.UpdateAddress(newAddress))
                 },
-                label = { Text("Address") },
-                modifier = Modifier.fillMaxWidth()
+                label = { Text(stringResource(R.string.label_address)) },
+                modifier = Modifier
+                    .fillMaxWidth(),
+                textStyle = MaterialTheme.typography.titleMedium
             )
             TextField(
                 value = parking.notes,
                 onValueChange = { newNotes ->
                     onAction(MainViewAction.UpdateNotes(newNotes))
                 },
-                label = { Text("Notes") },
-                modifier = Modifier.fillMaxWidth()
+                label = { Text(stringResource(R.string.label_notes)) },
+                modifier = Modifier
+                    .fillMaxWidth(),
+                textStyle = MaterialTheme.typography.titleMedium
             )
         }
     }
@@ -330,10 +320,10 @@ fun MainScreenPreview() {
             uiState = MainUiState.Success(
                 Parking(
                     id = "0",
-                    notes = "Provisional notes",
+                    notes = stringResource(R.string.preview_notes_provisional),
                     imageUri = null,
                     location = ParkingLocation(0.0, 0.0),
-                    address = "Provisional address"
+                    address = stringResource(R.string.preview_address_provisional)
                 )
             ),
             onAction = {}
