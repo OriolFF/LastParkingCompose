@@ -61,6 +61,7 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.Text
 import androidx.compose.foundation.background
 import androidx.compose.material3.CircularProgressIndicator
+import org.koin.compose.koinInject
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -69,7 +70,7 @@ fun MainScreen(
     uiState: MainUiState,
     onAction: (MainViewAction) -> Unit,
 ) {
-    val locationRepository: LocationRepository = get()
+    val locationRepository: LocationRepository = koinInject()
 
     LaunchedEffect(uiState) {
         if (uiState is MainUiState.NewParking) {
@@ -126,6 +127,8 @@ fun MainScreen(
                 notModifiable = false,
                 onAction = onAction
             )
+
+            MainUiState.RequestingPermission -> TODO()
         }
     }
 }
@@ -266,7 +269,7 @@ private fun ParkingScreen(
                         }
                     } else {
                         FloatingActionButton(
-                            onClick = { onAction(MainViewAction.AddNewParking) },
+                            onClick = { onAction(MainViewAction.AddNewParkingClicked) },
                             containerColor = MaterialTheme.colorScheme.primary
                         ) {
                             Icon(
@@ -308,7 +311,7 @@ private fun ParkingScreen(
                 modifier = Modifier.fillMaxWidth()
             )
             TextField(
-                value = parking.notes ?: "",
+                value = parking.notes,
                 onValueChange = { newNotes ->
                     onAction(MainViewAction.UpdateNotes(newNotes))
                 },
