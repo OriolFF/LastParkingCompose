@@ -19,9 +19,9 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import com.uriolus.lastparking.presentation.viewmodel.MainViewEvent
 import com.uriolus.lastparking.presentation.viewmodel.MainViewModel
-import org.koin.androidx.viewmodel.ext.android.viewModel
 import com.uriolus.lastparking.ui.theme.LastParkingTheme
 import kotlinx.coroutines.launch
+import org.koin.androidx.viewmodel.ext.android.viewModel
 
 
 class MainActivity : ComponentActivity() {

@@ -1,6 +1,5 @@
 package com.uriolus.lastparking.presentation.viewmodel
 
-import com.uriolus.lastparking.domain.model.ParkingLocation
 
 sealed interface MainViewAction {
     data object AddNewParkingClicked : MainViewAction

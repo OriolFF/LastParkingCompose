@@ -4,8 +4,8 @@ import android.os.Looper
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
-import com.google.android.gms.location.Priority
 import com.google.android.gms.location.LocationResult
+import com.google.android.gms.location.Priority
 import com.uriolus.lastparking.domain.model.ParkingLocation
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
