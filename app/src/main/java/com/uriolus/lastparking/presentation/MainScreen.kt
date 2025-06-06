@@ -70,6 +70,7 @@ import com.uriolus.lastparking.R
 import com.uriolus.lastparking.domain.model.EmptyParking
 import com.uriolus.lastparking.domain.model.Parking
 import com.uriolus.lastparking.domain.model.ParkingLocation
+import com.uriolus.lastparking.presentation.ui.GpsAccuracyIndicator
 import com.uriolus.lastparking.presentation.viewmodel.MainUiState
 import com.uriolus.lastparking.presentation.viewmodel.MainViewAction
 import com.uriolus.lastparking.ui.theme.LastParkingTheme
@@ -223,7 +224,7 @@ fun MainScreen(
                 else -> { /* No FAB for Loading, Error, RequestingPermission states */ }
             }
         }
-    ) { padding ->
+    ) { paddingValues ->
         // Handle permission dialog states
         when (uiState) {
             is MainUiState.ShowLocationPermissionRationale -> {
@@ -270,25 +271,32 @@ fun MainScreen(
         }
 
         when (uiState) {
-            is MainUiState.Loading -> LoadingScreen(padding)
-            is MainUiState.Error -> ErrorScreen(uiState, padding)
-            is MainUiState.RequestingPermission -> RequestingPermissionScreen(padding) // Shows a simple text
-            is MainUiState.PermissionRequiredButNotGranted -> PermissionDeniedPermanentlyScreen(padding) {
+            is MainUiState.Loading -> LoadingScreen(paddingValues)
+            is MainUiState.Error -> ErrorScreen(uiState, paddingValues)
+            is MainUiState.RequestingPermission -> RequestingPermissionScreen(paddingValues) // Shows a simple text
+            is MainUiState.PermissionRequiredButNotGranted -> PermissionDeniedPermanentlyScreen(paddingValues) {
                 onAction(MainViewAction.RequestLocationPermissionAgain)
             }
             is MainUiState.Success -> ParkingScreen(
-                modifier = Modifier.padding(padding),
+                modifier = Modifier.padding(paddingValues),
                 parking = uiState.parking,
-                hasChanges = uiState.fabState.saveParking,
                 notModifiable = !uiState.fabState.saveParking,
                 onAction = onAction
             )
-            is MainUiState.NewParking -> NewParkingCaptureScreen(
-                modifier = Modifier.padding(padding),
-                uiState = uiState,
-                onAction = onAction
-            )
-
+            is MainUiState.NewParking -> Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+            ) {
+                GpsAccuracyIndicator(accuracy = uiState.gpsAccuracy)
+                Spacer(modifier = Modifier.height(8.dp))
+                ParkingScreen(
+                    modifier = Modifier.weight(1f),
+                    parking = uiState.parking,
+                    notModifiable = false,
+                    onAction = onAction
+                )
+            }
             MainUiState.ShowLocationPermissionPermanentlyDenied -> TODO()
             MainUiState.ShowLocationPermissionRationale -> TODO()
         }
@@ -373,10 +381,10 @@ private fun ParkingScreen(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .weight(0.7f), // Changed weight to 0.7f
+                .weight(0.7f),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            // Map display (first item)
+            // Map display
             val mapLatLng = parking.location.let { LatLng(it.latitude, it.longitude) }
             val cameraPositionState = rememberCameraPositionState {
                 mapLatLng.let { position = CameraPosition.fromLatLngZoom(it, 15f) }
@@ -391,8 +399,8 @@ private fun ParkingScreen(
 
             GoogleMap(
                 modifier = Modifier
-                    .weight(1f) // Takes vertical space in this Column
-                    .fillMaxWidth() // Fills width
+                    .weight(1f)
+                    .fillMaxWidth()
                     .background(Color.LightGray.copy(alpha = 0.3f), shape = RoundedCornerShape(8.dp)),
                 cameraPositionState = cameraPositionState,
                 uiSettings = com.google.maps.android.compose.MapUiSettings(
@@ -409,26 +417,23 @@ private fun ParkingScreen(
                 )
             }
 
-            // Image display (second item)
-            if (!parking.imageUri.isNullOrEmpty()) {
-                AsyncImage(
-                    model = parking.imageUri,
-                    contentDescription = stringResource(R.string.content_description_parking_image),
-                    modifier = Modifier
-                        .weight(1f) // Takes vertical space in this Column
-                        .fillMaxWidth() // Fills width
-                        .background(Color.DarkGray, shape = RoundedCornerShape(8.dp)),
-                    contentScale = ContentScale.Crop,
-                    error = painterResource(id = R.drawable.ic_camera) // Placeholder on error
-                )
-            } else {
-                Box(
-                    modifier = Modifier
-                        .weight(1f) // Takes vertical space in this Column
-                        .fillMaxWidth() // Fills width
-                        .background(Color.LightGray.copy(alpha = 0.3f), shape = RoundedCornerShape(8.dp)),
-                    contentAlignment = Alignment.Center
-                ) {
+            // Image display
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
+                    .background(Color.LightGray.copy(alpha = 0.3f), shape = RoundedCornerShape(8.dp)),
+                contentAlignment = Alignment.Center
+            ) {
+                if (!parking.imageUri.isNullOrEmpty()) {
+                    AsyncImage(
+                        model = parking.imageUri,
+                        contentDescription = stringResource(R.string.content_description_parking_image),
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop,
+                        error = painterResource(id = R.drawable.ic_camera)
+                    )
+                } else {
                     Icon(
                         painter = painterResource(R.drawable.ic_camera),
                         contentDescription = stringResource(R.string.content_description_parking_image),
@@ -439,11 +444,11 @@ private fun ParkingScreen(
             }
         }
 
-        // Editable fields (Address and Notes)
+        // Editable fields
         EditableFields(
             modifier = Modifier
                 .fillMaxWidth()
-                .weight(0.3f), // Changed weight to 0.3f
+                .weight(0.3f),
             parking = parking,
             notModifiable = notModifiable,
             onAction = onAction
@@ -453,7 +458,7 @@ private fun ParkingScreen(
 
 @Composable
 fun EditableFields(
-    modifier: Modifier = Modifier, // Added modifier parameter
+    modifier: Modifier = Modifier,
     parking: Parking,
     notModifiable: Boolean,
     onAction: (MainViewAction) -> Unit
@@ -596,29 +601,6 @@ fun NewParkingCaptureScreen(
     }
 }
 
-@Composable
-fun GpsAccuracyIndicator(accuracy: Float?) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        val progress = when {
-            accuracy == null -> 0.0f // Or use an indeterminate indicator
-            accuracy <= 5f -> 1.0f
-            accuracy <= 10f -> 0.75f
-            accuracy <= 20f -> 0.5f
-            else -> 0.25f
-        }
-        if (accuracy == null) {
-            CircularProgressIndicator(modifier = Modifier.size(64.dp))
-        } else {
-            CircularProgressIndicator(progress = { progress }, modifier = Modifier.size(64.dp))
-        }
-        Spacer(modifier = Modifier.height(8.dp))
-        Text(
-            text = if (accuracy != null) stringResource(R.string.label_gps_accuracy, accuracy)
-            else stringResource(R.string.label_gps_accuracy_unavailable),
-            style = MaterialTheme.typography.bodyMedium
-        )
-    }
-}
 
 @Preview(showBackground = true)
 @Composable
@@ -638,7 +620,6 @@ fun MainScreenPreview() {
         )
     }
 }
-
 
 @Preview(showBackground = true)
 @Composable
