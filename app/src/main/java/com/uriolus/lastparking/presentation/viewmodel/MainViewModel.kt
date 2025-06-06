@@ -44,10 +44,14 @@ class MainViewModel(
     fun handleAction(action: MainViewAction) {
         when (action) {
             is MainViewAction.LoadLastParking -> loadLastParking()
-            is MainViewAction.LocationPermissionGranted -> loadLastParking()
-            is MainViewAction.TakePicture -> { /* TODO: Decide if this action is needed or if UI handles intent directly */ }
+            is MainViewAction.LocationPermissionGranted -> {
+                // DO nothing
+            }
+
+            is MainViewAction.TakePicture -> { /* TODO: Decide if this action is needed or if UI handles intent directly */
+            }
+
             is MainViewAction.AddNewParkingClicked -> {
-                // Permissions are now handled by the MainScreen before this action is sent.
                 // Directly proceed to get location.
                 addressFetchAttempted = false // Reset flag
                 _uiState.value = MainUiState.NewParking(
@@ -99,9 +103,12 @@ class MainViewModel(
                         is AppError.LocationPermissionDenied -> {
                             _uiState.value = MainUiState.PermissionRequiredButNotGranted
                         }
+
                         else -> {
                             _uiState.value =
-                                MainUiState.Error(AppError.ErrorLoading("Failed to start location updates: ${appError::class.simpleName}"))
+                                MainUiState.Error(
+                                    AppError.ErrorLoading("Failed to start location updates: ${appError::class.simpleName}")
+                                )
                         }
                     }
                 },
@@ -109,7 +116,9 @@ class MainViewModel(
                     locationFlow
                         .catch { e -> // Catch errors during flow emission
                             _uiState.value =
-                                MainUiState.Error(AppError.ErrorLoading("Location Flow Error: ${e.localizedMessage}"))
+                                MainUiState.Error(
+                                    AppError.ErrorLoading("Location Flow Error: ${e.localizedMessage}")
+                                )
                         }
                         .collect { newLocation ->
                             val currentState = _uiState.value
@@ -119,7 +128,11 @@ class MainViewModel(
                                     gpsAccuracy = newLocation.accuracy
                                 )
                                 // Check accuracy and fetch address if needed
-                                if (newLocation.accuracy != null && newLocation.accuracy <= GOOD_ACCURACY_THRESHOLD && !addressFetchAttempted && currentState.parking.address.isNullOrEmpty()) {
+                                if (newLocation.accuracy != null &&
+                                    newLocation.accuracy <= GOOD_ACCURACY_THRESHOLD &&
+                                    !addressFetchAttempted &&
+                                    currentState.parking.address.isNullOrEmpty()
+                                ) {
                                     addressFetchAttempted = true
                                     fetchAddressForLocation(newLocation)
                                 }
