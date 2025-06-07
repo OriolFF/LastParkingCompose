@@ -20,7 +20,7 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.launch
 
-private const val GOOD_ACCURACY_THRESHOLD = 10.0f // meters
+private const val GOOD_ACCURACY_THRESHOLD = 50.0f // meters
 
 class MainViewModel(
     private val getLastParkingUseCase: GetLastParkingUseCase,
@@ -41,13 +41,14 @@ class MainViewModel(
 
     init {
         handleAction(MainViewAction.LoadLastParking)
+        handleAction(MainViewAction.LoadLastParking)
     }
 
     fun handleAction(action: MainViewAction) {
         when (action) {
             is MainViewAction.LoadLastParking -> loadLastParking()
             is MainViewAction.LocationPermissionGranted -> {
-                // DO nothing
+                startNewParking()
             }
 
             is MainViewAction.TakePicture -> { /* TODO: Decide if this action is needed or if UI handles intent directly */
@@ -55,12 +56,7 @@ class MainViewModel(
 
             is MainViewAction.AddNewParkingClicked -> {
                 // Directly proceed to get location.
-                addressFetchAttempted = false // Reset flag
-                _uiState.value = MainUiState.NewParking(
-                    parking = EmptyParking.copy(), // Start with a fresh parking object
-                    gpsAccuracy = null // Initial accuracy is unknown
-                )
-                startCollectingLocationUpdates()
+                startNewParking()
             }
 
             is MainViewAction.LocationPermissionRequestCancelled -> {
@@ -94,6 +90,15 @@ class MainViewModel(
             is MainViewAction.SetImageUri -> updateImagePath(action.imageUri)
             is MainViewAction.CancelAddNewParking -> cancelAddNewParking()
         }
+    }
+
+    private fun startNewParking() {
+        addressFetchAttempted = false // Reset flag
+        _uiState.value = MainUiState.NewParking(
+            parking = EmptyParking.copy(), // Start with a fresh parking object
+            gpsAccuracy = null // Initial accuracy is unknown
+        )
+        startCollectingLocationUpdates()
     }
 
     private fun startCollectingLocationUpdates() {
