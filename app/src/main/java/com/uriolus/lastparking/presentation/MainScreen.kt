@@ -19,8 +19,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
@@ -42,13 +40,8 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -60,12 +53,6 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import coil.compose.AsyncImage
-import com.google.android.gms.maps.model.CameraPosition
-import com.google.android.gms.maps.model.LatLng
-import com.google.maps.android.compose.GoogleMap
-import com.google.maps.android.compose.Marker
-import com.google.maps.android.compose.MarkerState
-import com.google.maps.android.compose.rememberCameraPositionState
 import com.uriolus.lastparking.R
 import com.uriolus.lastparking.domain.model.EmptyParking
 import com.uriolus.lastparking.domain.model.Parking
@@ -110,8 +97,10 @@ fun MainScreen(
     val locationPermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestMultiplePermissions(),
         onResult = { permissionsMap ->
-            val fineLocationGranted = permissionsMap[Manifest.permission.ACCESS_FINE_LOCATION] ?: false
-            val coarseLocationGranted = permissionsMap[Manifest.permission.ACCESS_COARSE_LOCATION] ?: false
+            val fineLocationGranted =
+                permissionsMap[Manifest.permission.ACCESS_FINE_LOCATION] ?: false
+            val coarseLocationGranted =
+                permissionsMap[Manifest.permission.ACCESS_COARSE_LOCATION] ?: false
 
             if (fineLocationGranted || coarseLocationGranted) {
                 onAction(MainViewAction.LoadLastParking) // Permissions granted, proceed
@@ -173,7 +162,7 @@ fun MainScreen(
             )
         },
         floatingActionButton = {
-            when (val currentUiState = uiState) {
+            when (uiState) {
                 is MainUiState.NewParking -> {
                     FloatingActionButton(
                         onClick = { onAction(MainViewAction.SaveCurrentLocation) },
@@ -185,8 +174,9 @@ fun MainScreen(
                         )
                     }
                 }
+
                 is MainUiState.Success -> {
-                    if (currentUiState.fabState.saveParking) {
+                    if (uiState.fabState.saveParking) {
                         FloatingActionButton(
                             onClick = { onAction(MainViewAction.SaveCurrentLocation) },
                             containerColor = MaterialTheme.colorScheme.tertiary
@@ -196,7 +186,7 @@ fun MainScreen(
                                 contentDescription = stringResource(R.string.content_description_save_location)
                             )
                         }
-                    } else if (currentUiState.fabState.newParking) {
+                    } else if (uiState.fabState.newParking) {
                         // This is the FAB that was previously in ParkingScreen
                         FloatingActionButton(
                             onClick = {
@@ -221,7 +211,9 @@ fun MainScreen(
                         }
                     }
                 }
-                else -> { /* No FAB for Loading, Error, RequestingPermission states */ }
+
+                else -> { /* No FAB for Loading, Error, RequestingPermission states */
+                }
             }
         }
     ) { paddingValues ->
@@ -244,6 +236,7 @@ fun MainScreen(
                     }
                 )
             }
+
             is MainUiState.ShowLocationPermissionPermanentlyDenied -> {
                 AlertDialog(
                     onDismissRequest = { onAction(MainViewAction.DismissPermissionDialogs) },
@@ -251,9 +244,10 @@ fun MainScreen(
                     text = { Text(stringResource(R.string.permission_location_denied_message)) },
                     confirmButton = {
                         TextButton(onClick = {
-                            val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
-                                data = Uri.fromParts("package", context.packageName, null)
-                            }
+                            val intent =
+                                Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                                    data = Uri.fromParts("package", context.packageName, null)
+                                }
                             context.startActivity(intent)
                             onAction(MainViewAction.DismissPermissionDialogs)
                         }) {
@@ -267,22 +261,23 @@ fun MainScreen(
                     }
                 )
             }
-            else -> { /* No dialog for other states */ }
-        }
 
-        when (uiState) {
             is MainUiState.Loading -> LoadingScreen(paddingValues)
             is MainUiState.Error -> ErrorScreen(uiState, paddingValues)
             is MainUiState.RequestingPermission -> RequestingPermissionScreen(paddingValues) // Shows a simple text
-            is MainUiState.PermissionRequiredButNotGranted -> PermissionDeniedPermanentlyScreen(paddingValues) {
+            is MainUiState.PermissionRequiredButNotGranted -> PermissionDeniedPermanentlyScreen(
+                paddingValues
+            ) {
                 onAction(MainViewAction.RequestLocationPermissionAgain)
             }
+
             is MainUiState.Success -> ParkingScreen(
                 modifier = Modifier.padding(paddingValues),
                 parking = uiState.parking,
                 notModifiable = !uiState.fabState.saveParking,
                 onAction = onAction
             )
+
             is MainUiState.NewParking -> Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -297,6 +292,7 @@ fun MainScreen(
                     onAction = onAction
                 )
             }
+
             MainUiState.ShowLocationPermissionPermanentlyDenied -> TODO()
             MainUiState.ShowLocationPermissionRationale -> TODO()
         }
@@ -373,86 +369,77 @@ private fun ParkingScreen(
 ) {
     Column(
         modifier = modifier
-            .fillMaxSize()
-            .padding(horizontal = 16.dp, vertical = 8.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+            .padding(16.dp)
+            .fillMaxSize(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        // Map and Image section
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .weight(0.7f),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            // Map display
-            val mapLatLng = parking.location.let { LatLng(it.latitude, it.longitude) }
-            val cameraPositionState = rememberCameraPositionState {
-                mapLatLng.let { position = CameraPosition.fromLatLngZoom(it, 15f) }
-            }
-            LaunchedEffect(mapLatLng) {
-                mapLatLng.let {
-                    cameraPositionState.animate(
-                        com.google.android.gms.maps.CameraUpdateFactory.newLatLngZoom(it, 15f)
-                    )
-                }
-            }
-
-            GoogleMap(
+        if (parking.mapUri != null) {
+            AsyncImage(
+                model = parking.mapUri,
+                contentDescription = stringResource(R.string.content_description_map_image),
                 modifier = Modifier
-                    .weight(1f)
                     .fillMaxWidth()
-                    .background(Color.LightGray.copy(alpha = 0.3f), shape = RoundedCornerShape(8.dp)),
-                cameraPositionState = cameraPositionState,
-                uiSettings = com.google.maps.android.compose.MapUiSettings(
-                    zoomControlsEnabled = false,
-                    zoomGesturesEnabled = false,
-                    scrollGesturesEnabled = false,
-                    scrollGesturesEnabledDuringRotateOrZoom = false,
-                    tiltGesturesEnabled = false
-                )
-            ) {
-                Marker(
-                    state = MarkerState(position = mapLatLng),
-                    title = parking.address ?: stringResource(R.string.current_location_marker_title)
-                )
-            }
-
-            // Image display
-            Box(
+                    .height(200.dp)
+                    .background(MaterialTheme.colorScheme.surfaceVariant), // Placeholder background
+                contentScale = ContentScale.Crop,
+                placeholder = painterResource(id = R.drawable.ic_launcher_foreground), // Generic placeholder
+                error = painterResource(id = R.drawable.ic_launcher_background) // Generic error placeholder
+            )
+        } else {
+            NoMapPlaceholder()
+        }
+        if (!parking.imageUri.isNullOrEmpty()) {
+            AsyncImage(
+                model = parking.imageUri,
+                contentDescription = stringResource(R.string.content_description_parking_image),
                 modifier = Modifier
-                    .weight(1f)
                     .fillMaxWidth()
-                    .background(Color.LightGray.copy(alpha = 0.3f), shape = RoundedCornerShape(8.dp)),
-                contentAlignment = Alignment.Center
-            ) {
-                if (!parking.imageUri.isNullOrEmpty()) {
-                    AsyncImage(
-                        model = parking.imageUri,
-                        contentDescription = stringResource(R.string.content_description_parking_image),
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Crop,
-                        error = painterResource(id = R.drawable.ic_camera)
-                    )
-                } else {
-                    Icon(
-                        painter = painterResource(R.drawable.ic_camera),
-                        contentDescription = stringResource(R.string.content_description_parking_image),
-                        tint = Color.Gray,
-                        modifier = Modifier.size(48.dp)
-                    )
-                }
-            }
+                    .height(200.dp)
+                    .background(MaterialTheme.colorScheme.surfaceVariant), // Placeholder background
+                contentScale = ContentScale.Crop,
+                placeholder = painterResource(id = R.drawable.ic_launcher_foreground), // Generic placeholder
+                error = painterResource(id = R.drawable.ic_launcher_background) // Generic error placeholder
+            )
+        } else {
+            NoImagePlaceholder()
         }
 
-        // Editable fields
+        Spacer(modifier = Modifier.height(8.dp))
+
         EditableFields(
-            modifier = Modifier
-                .fillMaxWidth()
-                .weight(0.3f),
             parking = parking,
             notModifiable = notModifiable,
             onAction = onAction
         )
+    }
+}
+
+@Composable
+fun NoImagePlaceholder() {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(200.dp)
+            .background(MaterialTheme.colorScheme.surfaceVariant)
+            .padding(16.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(stringResource(R.string.no_image_available))
+    }
+}
+
+@Composable
+fun NoMapPlaceholder() {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(200.dp)
+            .background(MaterialTheme.colorScheme.surfaceVariant)
+            .padding(16.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(stringResource(R.string.no_image_available))
     }
 }
 
@@ -470,10 +457,17 @@ fun EditableFields(
     ) {
         if (notModifiable) {
             Text(
-                text = stringResource(R.string.label_address) + ": ${parking.address ?: stringResource(R.string.text_no_address_available)}",
+                text = stringResource(R.string.label_address) + ": ${
+                    parking.address ?: stringResource(
+                        R.string.text_no_address_available
+                    )
+                }",
                 style = MaterialTheme.typography.bodyLarge,
             )
-            Text(text = stringResource(R.string.label_notes) + ": ${parking.notes}", style = MaterialTheme.typography.bodyLarge)
+            Text(
+                text = stringResource(R.string.label_notes) + ": ${parking.notes}",
+                style = MaterialTheme.typography.bodyLarge
+            )
         } else {
             OutlinedTextField(
                 value = parking.address ?: "",
@@ -496,108 +490,6 @@ fun EditableFields(
                 textStyle = MaterialTheme.typography.titleMedium
             )
         }
-    }
-}
-
-@Composable
-fun NewParkingCaptureScreen(
-    modifier: Modifier = Modifier,
-    uiState: MainUiState.NewParking,
-    onAction: (MainViewAction) -> Unit
-) {
-    val context = LocalContext.current
-    var tempImageUri: Uri? by remember { mutableStateOf(null) }
-
-    val cameraLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.TakePicture(),
-        onResult = { success ->
-            if (success) {
-                onAction(MainViewAction.ImagePathUpdated(tempImageUri?.toString()))
-            }
-        }
-    )
-
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        GpsAccuracyIndicator(accuracy = uiState.gpsAccuracy)
-
-        val currentLocation = uiState.parking.location
-        val mapLatLng = currentLocation?.let { LatLng(it.latitude, it.longitude) }
-
-        val cameraPositionState = rememberCameraPositionState {
-            mapLatLng?.let {
-                position = CameraPosition.fromLatLngZoom(it, 15f) // Default zoom level
-            }
-        }
-
-        // Update camera position when location changes
-        LaunchedEffect(mapLatLng) {
-            mapLatLng?.let {
-                cameraPositionState.animate(
-                    com.google.android.gms.maps.CameraUpdateFactory.newLatLngZoom(it, 15f)
-                )
-            }
-        }
-
-        if (mapLatLng != null) {
-            GoogleMap(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f)
-                    .background(Color.LightGray, shape = RoundedCornerShape(8.dp)),
-                cameraPositionState = cameraPositionState
-            ) {
-                Marker(
-                    state = MarkerState(position = mapLatLng),
-                    title = stringResource(R.string.current_location_marker_title)
-                )
-            }
-        } else {
-            // Placeholder if location is not yet available
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f)
-                    .background(Color.LightGray, shape = RoundedCornerShape(8.dp)),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(stringResource(R.string.map_waiting_for_location))
-            }
-        }
-
-        // Image capture section
-        if (uiState.parking.imageUri != null) {
-            AsyncImage(
-                model = uiState.parking.imageUri,
-                contentDescription = stringResource(R.string.captured_image_description),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f)
-                    .background(Color.DarkGray, shape = RoundedCornerShape(8.dp)),
-                contentScale = ContentScale.Crop
-            )
-        } else {
-            Button(
-                onClick = {
-                    tempImageUri = createImageUri(context)
-                    cameraLauncher.launch(tempImageUri!!)
-                },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(stringResource(R.string.take_picture_button_label))
-            }
-        }
-
-        EditableFields(
-            parking = uiState.parking,
-            notModifiable = false,
-            onAction = onAction
-        )
     }
 }
 
@@ -671,19 +563,6 @@ fun ParkingScreenPreviewEmpty() {
     }
 }
 
-@Preview(showBackground = true)
-@Composable
-fun NewParkingCaptureScreenPreview() {
-    LastParkingTheme {
-        NewParkingCaptureScreen(
-            uiState = MainUiState.NewParking(
-                parking = EmptyParking.copy(notes = "Some notes here"),
-                gpsAccuracy = 12.5f
-            ),
-            onAction = {}
-        )
-    }
-}
 
 @Preview(showBackground = true)
 @Composable

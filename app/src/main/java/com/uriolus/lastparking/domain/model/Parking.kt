@@ -6,7 +6,8 @@ data class Parking(
     val location: ParkingLocation,
     val address: String? = null,
     val date: String? = null,
-    val imageUri: String? = null
+    val imageUri: String? = null,
+    val mapUri: String? = null
 )
 
 

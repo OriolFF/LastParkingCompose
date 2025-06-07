@@ -14,6 +14,6 @@ sealed interface MainViewAction {
     data object SaveCurrentLocation : MainViewAction
     data class UpdateNotes(val notes: String) : MainViewAction
     data class UpdateAddress(val address: String) : MainViewAction
-    data class ImagePathUpdated(val imageUri: String?) : MainViewAction
+    data class SetImageUri(val imageUri: String?) : MainViewAction // Renamed from ImagePathUpdated
     data object LocationPermissionGranted : MainViewAction
 }

@@ -75,8 +75,4 @@ dependencies {
 
     // Coil for image loading
     implementation("io.coil-kt:coil-compose:2.6.0")
-
-    // Google Maps Compose
-    implementation("com.google.maps.android:maps-compose:4.3.3") // Check for latest version
-    implementation("com.google.android.gms:play-services-maps:18.2.0")
 }

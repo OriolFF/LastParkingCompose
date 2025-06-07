@@ -10,6 +10,7 @@ import com.uriolus.lastparking.domain.model.ParkingLocation
 import com.uriolus.lastparking.domain.use_case.GetAddressFromLocationUseCase
 import com.uriolus.lastparking.domain.use_case.GetLastParkingUseCase
 import com.uriolus.lastparking.domain.use_case.GetLocationUpdatesUseCase
+import com.uriolus.lastparking.domain.use_case.GetMapUrlFromLocationUseCase
 import com.uriolus.lastparking.domain.use_case.SaveParkingUseCase
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -25,7 +26,8 @@ class MainViewModel(
     private val getLastParkingUseCase: GetLastParkingUseCase,
     private val saveParkingUseCase: SaveParkingUseCase,
     private val getLocationUpdatesUseCase: GetLocationUpdatesUseCase,
-    private val getAddressFromLocationUseCase: GetAddressFromLocationUseCase
+    private val getAddressFromLocationUseCase: GetAddressFromLocationUseCase,
+    private val getStaticMapRepositoryUseCase: GetMapUrlFromLocationUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<MainUiState>(MainUiState.Loading)
@@ -89,7 +91,7 @@ class MainViewModel(
             is MainViewAction.SaveCurrentLocation -> saveCurrentLocation()
             is MainViewAction.UpdateNotes -> updateNotes(action.notes)
             is MainViewAction.UpdateAddress -> updateAddress(action.address)
-            is MainViewAction.ImagePathUpdated -> updateImagePath(action.imageUri)
+            is MainViewAction.SetImageUri -> updateImagePath(action.imageUri)
             is MainViewAction.CancelAddNewParking -> cancelAddNewParking()
         }
     }
@@ -135,6 +137,7 @@ class MainViewModel(
                                 ) {
                                     addressFetchAttempted = true
                                     fetchAddressForLocation(newLocation)
+                                    fetchMapForLocation(newLocation)
                                 }
                             }
                         }
@@ -162,6 +165,24 @@ class MainViewModel(
         }
     }
 
+    private fun fetchMapForLocation(location: ParkingLocation) {
+        viewModelScope.launch {
+
+            getStaticMapRepositoryUseCase(location).fold(
+                ifLeft = {
+                    // Handle error, e.g., show a toast or log
+                    _events.emit(MainViewEvent.ShowMessage("Could not fetch map: ${it::class.simpleName}"))
+                },
+                ifRight = { mapUrl ->
+                    val currentState = _uiState.value
+                    if (currentState is MainUiState.NewParking && mapUrl != null) {
+                        _uiState.value = currentState.copy(parking = currentState.parking.copy(mapUri = mapUrl))
+                    }
+                }
+            )
+        }
+    }
+
     private fun cancelAddNewParking() {
         locationUpdatesJob?.cancel()
         addressFetchAttempted = false // Reset flag
@@ -174,7 +195,9 @@ class MainViewModel(
             when (val result = getLastParkingUseCase.exec()) {
                 is Either.Left -> {
                     when (result.value) {
-                        AppError.ErrorNoPreviousParking -> _uiState.value = stateForEmptyParking()
+                        AppError.ErrorNoPreviousParking -> _uiState.value =
+                            stateForEmptyParking()
+
                         AppError.LocationPermissionDenied -> _uiState.value =
                             MainUiState.RequestingPermission // Changed to trigger UI permission flow
 
@@ -182,7 +205,8 @@ class MainViewModel(
                     }
                 }
 
-                is Either.Right -> _uiState.value = stateForLastParkingLoaded(result.value)
+                is Either.Right -> _uiState.value =
+                    stateForLastParkingLoaded(result.value)
             }
         }
     }
