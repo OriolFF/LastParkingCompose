@@ -61,7 +61,8 @@ dependencies {
     implementation (libs.kotlinx.serialization.json)
     implementation (libs.koin.android)
     implementation (libs.koin.androidx.compose)
-    
+    implementation(libs.androidx.material.icons.extended)
+
     // Google Play Services Location
     implementation(libs.play.services.location)
     

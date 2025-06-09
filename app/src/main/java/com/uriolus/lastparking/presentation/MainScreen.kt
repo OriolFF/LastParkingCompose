@@ -4,12 +4,15 @@ import android.Manifest
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
 import android.net.Uri
 import android.provider.Settings
+import android.util.Log
 import androidx.activity.compose.LocalActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -24,6 +27,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Done
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.outlined.BrokenImage
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -40,6 +44,11 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
@@ -53,6 +62,7 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import coil.compose.AsyncImage
+import coil.request.ErrorResult
 import com.uriolus.lastparking.R
 import com.uriolus.lastparking.domain.model.EmptyParking
 import com.uriolus.lastparking.domain.model.Parking
@@ -60,11 +70,16 @@ import com.uriolus.lastparking.domain.model.ParkingLocation
 import com.uriolus.lastparking.presentation.ui.GpsAccuracyIndicator
 import com.uriolus.lastparking.presentation.viewmodel.MainUiState
 import com.uriolus.lastparking.presentation.viewmodel.MainViewAction
+import com.uriolus.lastparking.presentation.viewmodel.MainViewEvent
 import com.uriolus.lastparking.ui.theme.LastParkingTheme
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.collectLatest
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import androidx.core.net.toUri
 
 // Helper function to create an image URI
 fun createImageUri(context: Context): Uri {
@@ -74,7 +89,7 @@ fun createImageUri(context: Context): Uri {
     val imageFile = File(imageDir, "JPEG_${timeStamp}_.jpg")
     return FileProvider.getUriForFile(
         context,
-        "${context.packageName}.provider", // Authority must match AndroidManifest
+        "com.uriolus.lastparking.fileprovider", // Corrected authority
         imageFile
     )
 }
@@ -84,14 +99,29 @@ fun createImageUri(context: Context): Uri {
 fun MainScreen(
     modifier: Modifier = Modifier,
     uiState: MainUiState,
+    events: SharedFlow<MainViewEvent>,
     onAction: (MainViewAction) -> Unit,
 ) {
     val context = LocalContext.current
     val activity = LocalActivity.current
+    var currentImageUriForSaving: Uri? by remember { mutableStateOf(null) }
 
     val locationPermissions = arrayOf(
         Manifest.permission.ACCESS_FINE_LOCATION,
         Manifest.permission.ACCESS_COARSE_LOCATION
+    )
+
+    // Camera Launcher using TakePicturePreview
+    val cameraLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.TakePicturePreview(),
+        onResult = { bitmap: Bitmap? ->
+            if (bitmap != null && currentImageUriForSaving != null) {
+                val success = saveBitmapToUri(context, bitmap, currentImageUriForSaving!!)
+                onAction(MainViewAction.CameraResult(success))
+            } else {
+                onAction(MainViewAction.CameraResult(false))
+            }
+        }
     )
 
     val locationPermissionLauncher = rememberLauncherForActivityResult(
@@ -103,7 +133,7 @@ fun MainScreen(
                 permissionsMap[Manifest.permission.ACCESS_COARSE_LOCATION] ?: false
 
             if (fineLocationGranted || coarseLocationGranted) {
-                onAction(MainViewAction.LoadLastParking) // Permissions granted, proceed
+                onAction(MainViewAction.LocationPermissionGranted)
             } else {
                 val shouldShowRationale = ActivityCompat.shouldShowRequestPermissionRationale(
                     activity,
@@ -114,10 +144,33 @@ fun MainScreen(
         }
     )
 
-    // Effect to request permissions when UI state is RequestingPermission
     LaunchedEffect(uiState) {
         if (uiState is MainUiState.RequestingPermission) {
             locationPermissionLauncher.launch(locationPermissions)
+        }
+        if (uiState is MainUiState.NewParking) {
+            val newImageUri = createImageUri(context)
+            onAction(MainViewAction.NewParkingScreenStarted(newImageUri))
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        events.collectLatest { event ->
+            when (event) {
+                is MainViewEvent.TakeAPicture -> {
+                    currentImageUriForSaving = event.uriImage.toUri()
+                    cameraLauncher.launch(null) // TakePicturePreview takes null input
+                }
+                is MainViewEvent.ShowMessage -> {
+                    Log.d("MainScreen", "Event: ShowMessage - ${event.message}")
+                }
+                is MainViewEvent.ShowError -> {
+                    Log.e("MainScreen", "Event: ShowError - ${event.error}")
+                }
+                is MainViewEvent.NavigateTo -> {
+                    Log.d("MainScreen", "Event: NavigateTo - ${event.route}")
+                }
+            }
         }
     }
 
@@ -145,7 +198,6 @@ fun MainScreen(
                     }
                 },
                 actions = {
-                    // TODO: Add any top bar actions if needed, like settings
                     if (uiState !is MainUiState.NewParking) {
                         IconButton(onClick = { /* TODO: Handle more options */ }) {
                             Icon(
@@ -187,7 +239,6 @@ fun MainScreen(
                             )
                         }
                     } else if (uiState.fabState.newParking) {
-                        // This is the FAB that was previously in ParkingScreen
                         FloatingActionButton(
                             onClick = {
                                 val allPermissionsAlreadyGranted = locationPermissions.all {
@@ -197,7 +248,7 @@ fun MainScreen(
                                     ) == PackageManager.PERMISSION_GRANTED
                                 }
                                 if (allPermissionsAlreadyGranted) {
-                                    onAction(MainViewAction.AddNewParkingClicked)
+                                    onAction(MainViewAction.StartNewParkingFlow)
                                 } else {
                                     locationPermissionLauncher.launch(locationPermissions)
                                 }
@@ -217,7 +268,6 @@ fun MainScreen(
             }
         }
     ) { paddingValues ->
-        // Handle permission dialog states
         when (uiState) {
             is MainUiState.ShowLocationPermissionRationale -> {
                 AlertDialog(
@@ -295,6 +345,7 @@ fun MainScreen(
 
             MainUiState.ShowLocationPermissionPermanentlyDenied -> TODO()
             MainUiState.ShowLocationPermissionRationale -> TODO()
+
         }
     }
 }
@@ -360,13 +411,18 @@ private fun PermissionDeniedPermanentlyScreen(padding: PaddingValues, onRetry: (
 }
 
 @Composable
-private fun ParkingScreen(
+fun ParkingScreen(
     modifier: Modifier = Modifier,
     parking: Parking,
     hasChanges: Boolean = false,
     notModifiable: Boolean = false,
     onAction: (MainViewAction) -> Unit = {}
 ) {
+    val rememberedParking by remember(parking.id, parking.location, parking.address, 
+                                      parking.notes, parking.imageUri, parking.mapUri) {
+        derivedStateOf { parking }
+    }
+    
     Column(
         modifier = modifier
             .padding(16.dp)
@@ -374,58 +430,105 @@ private fun ParkingScreen(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        if (parking.mapUri != null) {
-            AsyncImage(
-                model = parking.mapUri,
-                contentDescription = stringResource(R.string.content_description_map_image),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(200.dp)
-                    .background(MaterialTheme.colorScheme.surfaceVariant), // Placeholder background
-                contentScale = ContentScale.Crop,
-                placeholder = painterResource(id = R.drawable.ic_launcher_foreground), // Generic placeholder
-                error = painterResource(id = R.drawable.ic_launcher_background) // Generic error placeholder
-            )
-        } else {
-            NoMapPlaceholder()
-        }
-        if (!parking.imageUri.isNullOrEmpty()) {
-            AsyncImage(
-                model = parking.imageUri,
-                contentDescription = stringResource(R.string.content_description_parking_image),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(200.dp)
-                    .background(MaterialTheme.colorScheme.surfaceVariant), // Placeholder background
-                contentScale = ContentScale.Crop,
-                placeholder = painterResource(id = R.drawable.ic_launcher_foreground), // Generic placeholder
-                error = painterResource(id = R.drawable.ic_launcher_background) // Generic error placeholder
-            )
-        } else {
-            NoImagePlaceholder()
-        }
+       MapImage(rememberedParking.mapUri)
+        
+       PictureImage(rememberedParking.imageUri, onAction = onAction, isActionable = !notModifiable)
 
         Spacer(modifier = Modifier.height(8.dp))
 
+        val rememberedNotModifiable by remember(notModifiable) { derivedStateOf { notModifiable } }
+        
         EditableFields(
-            parking = parking,
-            notModifiable = notModifiable,
+            parking = rememberedParking,
+            notModifiable = rememberedNotModifiable,
             onAction = onAction
         )
     }
 }
 
 @Composable
-fun NoImagePlaceholder() {
+fun PictureImage(imageUri: String?, onAction: (MainViewAction) -> Unit, isActionable: Boolean) {
+    Log.d("PictureImage", "Attempting to load imageUri: $imageUri, isActionable: $isActionable")
+    if (!imageUri.isNullOrEmpty()) {
+
+        AsyncImage(
+            model = imageUri,
+            contentDescription = stringResource(R.string.content_description_parking_image),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(200.dp)
+                .background(MaterialTheme.colorScheme.surfaceVariant) // Placeholder background
+                .then(
+                    if (isActionable) {
+                        Modifier.clickable { onAction(MainViewAction.TakePicture) }
+                    } else {
+                        Modifier
+                    }
+                ),
+            contentScale = ContentScale.Crop,
+            placeholder = painterResource(id = R.drawable.ic_map_placeholder), // Generic placeholder
+            error = painterResource(id = R.drawable.ic_map_placeholder), // Generic error placeholder
+            onError = { errorResult ->
+                Log.e("PictureImage", "Error loading image: ${errorResult.result.throwable}")
+            }
+        )
+    } else {
+        Log.d("PictureImage", "imageUri is null or empty, showing placeholder.")
+        NoImagePlaceholder(onAction = onAction, isActionable = isActionable)
+    }
+}
+
+@Composable
+fun MapImage(mapUri: String?) {
+    if (!mapUri.isNullOrEmpty()) {
+        Log.d("MapUri", "MapUri: $mapUri")
+        AsyncImage(
+            model = mapUri,
+            contentDescription = stringResource(R.string.content_description_map_image),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(200.dp)
+                .background(MaterialTheme.colorScheme.surfaceVariant), // Placeholder background
+            contentScale = ContentScale.Crop,
+            placeholder = painterResource(id = R.drawable.ic_map_placeholder), // Generic placeholder
+            error = painterResource(id = R.drawable.ic_map_placeholder),
+            onError = { errorResult ->
+                Log.w("MapImage", "Error loading mapUri: $mapUri. Exception: ${errorResult.result.throwable}")
+            }
+        )
+    } else {
+        NoMapPlaceholder()
+    }
+}
+
+@Composable
+fun NoImagePlaceholder(onAction: (MainViewAction) -> Unit, isActionable: Boolean) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .height(200.dp)
             .background(MaterialTheme.colorScheme.surfaceVariant)
-            .padding(16.dp),
+            .then(
+                if (isActionable) Modifier.clickable { onAction(MainViewAction.TakePicture) }
+                else Modifier
+            ),
         contentAlignment = Alignment.Center
     ) {
-        Text(stringResource(R.string.no_image_available))
+        if (isActionable) {
+            Icon(
+                painter = painterResource(id = R.drawable.ic_camera),
+                contentDescription = stringResource(R.string.content_description_take_picture_placeholder),
+                modifier = Modifier.height(64.dp),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        } else {
+            Icon(
+                imageVector = Icons.Outlined.BrokenImage,
+                contentDescription = stringResource(R.string.content_description_no_image_available),
+                modifier = Modifier.height(64.dp),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+            )
+        }
     }
 }
 
@@ -450,6 +553,9 @@ fun EditableFields(
     notModifiable: Boolean,
     onAction: (MainViewAction) -> Unit
 ) {
+    val rememberedAddress by remember(parking.address) { derivedStateOf { parking.address ?: "" } }
+    val rememberedNotes by remember(parking.notes) { derivedStateOf { parking.notes } }
+    
     Column(
         modifier = modifier
             .fillMaxWidth(),
@@ -458,19 +564,17 @@ fun EditableFields(
         if (notModifiable) {
             Text(
                 text = stringResource(R.string.label_address) + ": ${
-                    parking.address ?: stringResource(
-                        R.string.text_no_address_available
-                    )
+                    rememberedAddress.ifEmpty { stringResource(R.string.text_no_address_available) }
                 }",
                 style = MaterialTheme.typography.bodyLarge,
             )
             Text(
-                text = stringResource(R.string.label_notes) + ": ${parking.notes}",
+                text = stringResource(R.string.label_notes) + ": ${rememberedNotes}",
                 style = MaterialTheme.typography.bodyLarge
             )
         } else {
             OutlinedTextField(
-                value = parking.address ?: "",
+                value = rememberedAddress,
                 onValueChange = { newAddress ->
                     onAction(MainViewAction.UpdateAddress(newAddress))
                 },
@@ -480,7 +584,7 @@ fun EditableFields(
                 textStyle = MaterialTheme.typography.titleMedium
             )
             OutlinedTextField(
-                value = parking.notes,
+                value = rememberedNotes,
                 onValueChange = { newNotes ->
                     onAction(MainViewAction.UpdateNotes(newNotes))
                 },
@@ -501,13 +605,14 @@ fun MainScreenPreview() {
         MainScreen(
             uiState = MainUiState.Success(
                 Parking(
-                    id = "0",
+                    id = "1",
+                    location = ParkingLocation(0.0, 0.0, 0f),
+                    address = stringResource(R.string.preview_address_provisional),
                     notes = stringResource(R.string.preview_notes_provisional),
-                    imageUri = null,
-                    location = ParkingLocation(0.0, 0.0),
-                    address = stringResource(R.string.preview_address_provisional)
+                    imageUri = null
                 )
             ),
+            events = MutableSharedFlow(),
             onAction = {}
         )
     }
@@ -579,5 +684,18 @@ fun GpsAccuracyIndicatorPreview() {
             Spacer(Modifier.height(16.dp))
             GpsAccuracyIndicator(accuracy = null)
         }
+    }
+}
+
+// Helper function to save Bitmap to a Uri
+private fun saveBitmapToUri(context: Context, bitmap: Bitmap, uri: Uri): Boolean {
+    return try {
+        context.contentResolver.openOutputStream(uri)?.use { outputStream ->
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 100, outputStream)
+        }
+        true
+    } catch (e: Exception) {
+        Log.e("MainScreen", "Error saving bitmap to URI: $uri", e)
+        false
     }
 }

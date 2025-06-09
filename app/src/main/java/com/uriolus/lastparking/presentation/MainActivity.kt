@@ -59,6 +59,8 @@ fun LastParkingApp(
                 is MainViewEvent.NavigateTo -> {
                     // Handle navigation if needed
                 }
+
+                else->{}
             }
         }
     }
@@ -79,8 +81,8 @@ fun LastParkingApp(
                     onAction = { action ->
                         viewModel.handleAction(action)
                     },
-
-                    )
+                    events = viewModel.events
+                )
             }
         }
     }

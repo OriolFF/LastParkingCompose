@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24.0"
+    android:viewportHeight="24.0">
+
+
+    <path
+        android:fillColor="#5C6BC0"
+        android:pathData="M12,2A10,10 0 1,0 12,22A10,10 0 1,0 12,2z" />
+
+    <!-- This path draws the question mark. It is composed of two parts:
+         the main curve and the dot at the bottom. The fill color is white. -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M12.87,14.15L12,15h-1v-1.5c0,-0.83,0.34,-1.58,0.88,-2.12l1.23,-1.23c0.37,-0.37,0.59,-0.88,0.59,-1.41c0,-1.1,-0.9,-2,-2,-2s-2,0.9,-2,2H8c0,-2.21,1.79,-4,4,-4s4,1.79,4,4c0,0.88,-0.36,1.67,-0.93,2.25l-0.99,0.9z M11,17h2v2h-2V17z" />
+
+</vector>

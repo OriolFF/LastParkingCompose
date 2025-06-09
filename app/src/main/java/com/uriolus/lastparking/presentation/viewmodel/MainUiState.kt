@@ -1,5 +1,6 @@
 package com.uriolus.lastparking.presentation.viewmodel
 
+import android.net.Uri
 import com.uriolus.lastparking.domain.model.AppError
 import com.uriolus.lastparking.domain.model.Parking
 
@@ -9,7 +10,7 @@ sealed class MainUiState {
     data class Error(val error: AppError) : MainUiState()
     data class Success(
         val parking: Parking,
-        val fabState: FABState = FABState()
+        val fabState: FABState = FABState(newParking = true)
     ) : MainUiState()
 
     data class NewParking(
@@ -22,6 +23,8 @@ sealed class MainUiState {
     data object ShowLocationPermissionRationale : MainUiState()
     data object ShowLocationPermissionPermanentlyDenied : MainUiState()
     data object PermissionRequiredButNotGranted : MainUiState() // Fallback state
+
+
 }
 
 data class FABState(val newParking: Boolean = false, val saveParking: Boolean = false)

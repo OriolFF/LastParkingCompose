@@ -34,6 +34,8 @@
     <string name="preview_notes_provisional">Provisional notes</string>
     <string name="preview_address_provisional">Provisional address</string>
     <string name="text_no_address_available">No address available</string>
+    <string name="content_description_take_picture_placeholder">Tap to take a picture</string>
+    <string name="content_description_no_image_available">No image available</string>
     <string name="permission_denied_message_location">Location permission is required to save the current parking spot. Please enable it in settings.</string>
     <!-- Permissions -->
     <string name="permission_location_rationale_title">Location Permission Needed</string>
