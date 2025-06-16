@@ -14,10 +14,10 @@ import com.uriolus.lastparking.domain.use_case.GetLocationUpdatesUseCase
 import com.uriolus.lastparking.domain.use_case.GetMapUrlFromLocationUseCase
 import com.uriolus.lastparking.domain.use_case.SaveParkingUseCase
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -34,8 +34,8 @@ class MainViewModel(
     private val _uiState = MutableStateFlow<MainUiState>(MainUiState.Loading)
     val uiState: StateFlow<MainUiState> = _uiState
 
-    private val _events = MutableSharedFlow<MainViewEvent>()
-    val events = _events.asSharedFlow()
+    private val _events = Channel<MainViewEvent>()
+    val events = _events.receiveAsFlow()
 
     private var locationUpdatesJob: Job? = null
     private var addressFetchAttempted: Boolean = false
@@ -100,9 +100,9 @@ class MainViewModel(
     private fun onTakePicture() {
         viewModelScope.launch {
             if (newParkingImageOutputUri != null) {
-                _events.emit(MainViewEvent.TakeAPicture(newParkingImageOutputUri!!))
+                _events.send(MainViewEvent.TakeAPicture(newParkingImageOutputUri!!))
             } else {
-                _events.emit(MainViewEvent.ShowError(AppError.ErrorTakingPicture))
+                _events.send(MainViewEvent.ShowError(AppError.ErrorTakingPicture))
             }
         }
     }
@@ -128,7 +128,7 @@ class MainViewModel(
                 _uiState.update { targetParkingState }
                 if (!success) {
                     viewModelScope.launch {
-                        _events.emit(MainViewEvent.ShowError(AppError.ErrorTakingPicture))
+                        _events.send(MainViewEvent.ShowError(AppError.ErrorTakingPicture))
                     }
                 }
             }
@@ -205,24 +205,31 @@ class MainViewModel(
             }
 
             if (addressResult is Either.Left) {
-                _events.emit(MainViewEvent.ShowError(addressResult.value))
+                _events.send(MainViewEvent.ShowError(addressResult.value))
             }
             if (mapUrlResult is Either.Left) {
-                _events.emit(MainViewEvent.ShowError(mapUrlResult.value))
+                _events.send(MainViewEvent.ShowError(mapUrlResult.value))
             }
         }
     }
 
     private fun saveCurrentLocation() {
-        val currentState = _uiState.value
-        if (currentState is MainUiState.NewParking) {
+        val parkingToSave = when (val currentState = _uiState.value) {
+            is MainUiState.NewParking -> currentState.parking
+            is MainUiState.Success -> currentState.parking
+            else -> null
+        }
+
+        if (parkingToSave != null) {
             viewModelScope.launch {
-                when (val result=saveParkingUseCase(currentState.parking)) {
+                when (val result = saveParkingUseCase(parkingToSave)) {
                     is Either.Right -> {
                         newParkingImageOutputUri = null
-                        _uiState.update { MainUiState.Success(currentState.parking) }
+                        _uiState.update { MainUiState.Success(parkingToSave) }
+                        _events.send(MainViewEvent.ShowMessage("Location Saved"))
                     }
-                    is Either.Left -> _events.emit(MainViewEvent.ShowError(result.value))
+
+                    is Either.Left -> _events.send(MainViewEvent.ShowError(result.value))
                 }
             }
         }

@@ -1,6 +1,7 @@
 package com.uriolus.lastparking.presentation
 
 import android.Manifest
+import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -38,6 +39,8 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -46,9 +49,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
@@ -62,7 +64,6 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import coil.compose.AsyncImage
-import coil.request.ErrorResult
 import com.uriolus.lastparking.R
 import com.uriolus.lastparking.domain.model.EmptyParking
 import com.uriolus.lastparking.domain.model.Parking
@@ -72,14 +73,14 @@ import com.uriolus.lastparking.presentation.viewmodel.MainUiState
 import com.uriolus.lastparking.presentation.viewmodel.MainViewAction
 import com.uriolus.lastparking.presentation.viewmodel.MainViewEvent
 import com.uriolus.lastparking.ui.theme.LastParkingTheme
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
-import androidx.core.net.toUri
 
 // Helper function to create an image URI
 fun createImageUri(context: Context): Uri {
@@ -105,11 +106,13 @@ fun createImageUri(context: Context): Uri {
 fun MainScreen(
     modifier: Modifier = Modifier,
     uiState: MainUiState,
-    events: SharedFlow<MainViewEvent>,
+    events: Flow<MainViewEvent>,
     onAction: (MainViewAction) -> Unit,
 ) {
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
     val context = LocalContext.current
-    val activity = LocalActivity.current
+    val activity: Activity? = LocalActivity.current
 
     val locationPermissions = arrayOf(
         Manifest.permission.ACCESS_FINE_LOCATION,
@@ -162,7 +165,9 @@ fun MainScreen(
                     cameraLauncher.launch(currentImageUriForSaving)
                 }
                 is MainViewEvent.ShowMessage -> {
-                    Log.d("MainScreen", "Event: ShowMessage - ${event.message}")
+                    scope.launch {
+                        snackbarHostState.showSnackbar(message = event.message)
+                    }
                 }
                 is MainViewEvent.ShowError -> {
                     Log.e("MainScreen", "Event: ShowError - ${event.error}")
@@ -175,6 +180,7 @@ fun MainScreen(
     }
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = {
@@ -324,7 +330,7 @@ fun MainScreen(
             is MainUiState.Success -> ParkingScreen(
                 modifier = Modifier.padding(paddingValues),
                 parking = uiState.parking,
-                notModifiable = !uiState.fabState.saveParking,
+                notModifiable = false,
                 onAction = onAction
             )
 
