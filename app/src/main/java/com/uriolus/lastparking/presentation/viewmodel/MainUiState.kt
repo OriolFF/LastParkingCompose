@@ -23,7 +23,7 @@ sealed class MainUiState {
     data object ShowLocationPermissionRationale : MainUiState()
     data object ShowLocationPermissionPermanentlyDenied : MainUiState()
     data object PermissionRequiredButNotGranted : MainUiState() // Fallback state
-
+    data object InitialNewParkingRequiresPermissionCheck : MainUiState()
 
 }
 

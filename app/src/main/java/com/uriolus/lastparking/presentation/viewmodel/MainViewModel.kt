@@ -51,6 +51,9 @@ class MainViewModel(
             is MainViewAction.StartNewParkingFlow -> {
                 startNewParkingProcess()
             }
+            is MainViewAction.ProceedWithInitialNewParking -> {
+                startLocationUpdates()
+            }
             is MainViewAction.NewParkingScreenStarted -> {
                 newParkingImageOutputUri = action.imageOutputUri
             }
@@ -92,7 +95,11 @@ class MainViewModel(
     }
 
     private fun startLocationUpdatesIfReady() {
-        if (_uiState.value is MainUiState.RequestingPermission || _uiState.value is MainUiState.NewParking || _uiState.value is MainUiState.Success) {
+        val currentState = _uiState.value
+        if (currentState is MainUiState.RequestingPermission || 
+            currentState is MainUiState.InitialNewParkingRequiresPermissionCheck || 
+            currentState is MainUiState.NewParking || 
+            currentState is MainUiState.Success) { 
             startLocationUpdates()
         }
     }
@@ -143,13 +150,13 @@ class MainViewModel(
             when (val result = getLastParkingUseCase.exec()) {
                 is Either.Right -> {
                     if (result.value == EmptyParking) {
-                        _uiState.update {MainUiState.NewParking(EmptyParking.copy(), gpsAccuracy = null)}
+                        _uiState.update { MainUiState.InitialNewParkingRequiresPermissionCheck }
                     } else {
                         _uiState.update { MainUiState.Success(result.value) }
                     }
                 }
                 is Either.Left -> {
-                    _uiState.update {MainUiState.NewParking(EmptyParking.copy(), gpsAccuracy = null)}
+                    _uiState.update { MainUiState.InitialNewParkingRequiresPermissionCheck }
                 }
             }
         }

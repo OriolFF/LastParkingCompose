@@ -127,10 +127,12 @@ fun MainScreen(
             if (fineLocationGranted || coarseLocationGranted) {
                 onAction(MainViewAction.LocationPermissionGranted)
             } else {
-                val shouldShowRationale = ActivityCompat.shouldShowRequestPermissionRationale(
-                    activity,
-                    Manifest.permission.ACCESS_FINE_LOCATION
-                )
+                val shouldShowRationale = activity?.let { act -> 
+                    ActivityCompat.shouldShowRequestPermissionRationale(
+                        act,
+                        Manifest.permission.ACCESS_FINE_LOCATION
+                    )
+                } ?: false // Default to false if activity is null
                 onAction(MainViewAction.LocationPermissionDenied(shouldShowRationale))
             }
         }
@@ -248,6 +250,7 @@ fun MainScreen(
                                 if (allPermissionsAlreadyGranted) {
                                     onAction(MainViewAction.StartNewParkingFlow)
                                 } else {
+                                    Log.d("MainScreen", "Permissions not granted. Launching location permission request.")
                                     locationPermissionLauncher.launch(locationPermissions)
                                 }
                             },
@@ -341,9 +344,30 @@ fun MainScreen(
                 )
             }
 
-            MainUiState.ShowLocationPermissionPermanentlyDenied -> TODO()
-            MainUiState.ShowLocationPermissionRationale -> TODO()
-
+            is MainUiState.InitialNewParkingRequiresPermissionCheck -> {
+                // This state means the app has loaded, found no prior parking, and needs to check permissions
+                // before proceeding to the new parking flow (which includes location updates).
+                val allPermissionsGranted = locationPermissions.all {
+                    ContextCompat.checkSelfPermission(context, it) == PackageManager.PERMISSION_GRANTED
+                }
+                if (allPermissionsGranted) {
+                    // Permissions are already granted, proceed to get location for new parking
+                    LaunchedEffect(Unit) { // Use LaunchedEffect to call onAction once
+                        onAction(MainViewAction.ProceedWithInitialNewParking)
+                    }
+                } else {
+                    // Permissions are not granted, request them.
+                    // The existing locationPermissionLauncher will handle the result.
+                    LaunchedEffect(Unit) { // Use LaunchedEffect to launch once
+                        Log.d("MainScreen", "InitialNewParkingRequiresPermissionCheck: Permissions not granted. Launching request.")
+                        locationPermissionLauncher.launch(locationPermissions)
+                    }
+                }
+                // Optionally, show a loading or specific UI for this check, 
+                // but for now, it will be a quick check and transition.
+                // A simple Text can be shown if the check/launch takes noticeable time.
+                RequestingPermissionScreen(paddingValues) // Re-use for visual consistency during check/launch
+            }
         }
     }
 }
