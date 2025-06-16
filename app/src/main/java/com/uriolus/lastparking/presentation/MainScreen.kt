@@ -87,6 +87,12 @@ fun createImageUri(context: Context): Uri {
     if (!imageDir.exists()) imageDir.mkdirs()
     val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
     val imageFile = File(imageDir, "JPEG_${timeStamp}_.jpg")
+    try {
+        imageFile.createNewFile() // Ensure the file exists
+    } catch (e: java.io.IOException) {
+        Log.e("MainScreen", "Failed to create image file", e)
+        // Handle error appropriately, perhaps return a fallback Uri or throw
+    }
     return FileProvider.getUriForFile(
         context,
         "com.uriolus.lastparking.fileprovider", // Corrected authority
@@ -113,12 +119,8 @@ fun MainScreen(
     // Camera Launcher using TakePicture
     val cameraLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.TakePicture(),
-        onResult = { success: Boolean? ->
-            if (success==true) {
-                onAction(MainViewAction.CameraResult(success))
-            } else {
-                onAction(MainViewAction.CameraResult(false))
-            }
+        onResult = { success: Boolean -> // Changed to non-nullable Boolean
+            onAction(MainViewAction.CameraResult(success)) // Simplified: success is true or false
         }
     )
 
@@ -156,7 +158,7 @@ fun MainScreen(
         events.collectLatest { event ->
             when (event) {
                 is MainViewEvent.TakeAPicture -> {
-                    val currentImageUriForSaving = event.uriImage.toUri()
+                    val currentImageUriForSaving = event.uriImage
                     cameraLauncher.launch(currentImageUriForSaving)
                 }
                 is MainViewEvent.ShowMessage -> {

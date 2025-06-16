@@ -100,7 +100,7 @@ class MainViewModel(
     private fun onTakePicture() {
         viewModelScope.launch {
             if (newParkingImageOutputUri != null) {
-                _events.emit(MainViewEvent.TakeAPicture(newParkingImageOutputUri.toString()))
+                _events.emit(MainViewEvent.TakeAPicture(newParkingImageOutputUri!!))
             } else {
                 _events.emit(MainViewEvent.ShowError(AppError.ErrorTakingPicture))
             }
