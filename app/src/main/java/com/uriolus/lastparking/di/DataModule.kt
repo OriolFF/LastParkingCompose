@@ -3,6 +3,7 @@ package com.uriolus.lastparking.di
 import com.uriolus.lastparking.data.datasource.DataSourceFusedProvider
 import com.uriolus.lastparking.data.datasource.ParkingDatasource
 import com.uriolus.lastparking.data.datasource.ParkingDatasourceMock
+import com.uriolus.lastparking.data.datasource.ParkingDatasourcePreferences
 import com.uriolus.lastparking.data.repository.GeocodingRepositoryImpl
 import com.uriolus.lastparking.data.repository.LocationRepositoryImpl
 import com.uriolus.lastparking.data.repository.ParkingRepositoryImpl
@@ -17,7 +18,7 @@ import org.koin.dsl.module
 
 val dataModule = module {
     // Data sources
-    single<ParkingDatasource> { ParkingDatasourceMock() }
+    single<ParkingDatasource> { ParkingDatasourcePreferences(get()) }
 
     val KEY: String = "AIzaSyDjXx1VcBDek6A0UPGQqIduxjgVcbJ_sEA"
 
