@@ -12,15 +12,12 @@ import android.util.Log
 import androidx.activity.compose.LocalActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
@@ -28,7 +25,6 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Done
 import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.outlined.BrokenImage
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -37,7 +33,6 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -47,15 +42,11 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.derivedStateOf
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
@@ -63,9 +54,7 @@ import androidx.compose.ui.unit.dp
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
-import coil.compose.AsyncImage
 import com.uriolus.lastparking.R
-import com.uriolus.lastparking.domain.model.EmptyParking
 import com.uriolus.lastparking.domain.model.Parking
 import com.uriolus.lastparking.domain.model.ParkingLocation
 import com.uriolus.lastparking.presentation.ui.GpsAccuracyIndicator
@@ -164,14 +153,17 @@ fun MainScreen(
                     val currentImageUriForSaving = event.uriImage
                     cameraLauncher.launch(currentImageUriForSaving)
                 }
+
                 is MainViewEvent.ShowMessage -> {
                     scope.launch {
                         snackbarHostState.showSnackbar(message = event.message)
                     }
                 }
+
                 is MainViewEvent.ShowError -> {
                     Log.e("MainScreen", "Event: ShowError - ${event.error}")
                 }
+
                 is MainViewEvent.NavigateTo -> {
                     Log.d("MainScreen", "Event: NavigateTo - ${event.route}")
                 }
@@ -416,195 +408,7 @@ private fun PermissionDeniedPermanentlyScreen(padding: PaddingValues, onRetry: (
     }
 }
 
-@Composable
-fun ParkingScreen(
-    modifier: Modifier = Modifier,
-    parking: Parking,
-    hasChanges: Boolean = false,
-    notModifiable: Boolean = false,
-    onAction: (MainViewAction) -> Unit = {}
-) {
-    val rememberedParking by remember(parking.id, parking.location, parking.address, 
-                                      parking.notes, parking.imageUri, parking.mapUri) {
-        derivedStateOf { parking }
-    }
-    
-    Column(
-        modifier = modifier
-            .padding(16.dp)
-            .fillMaxSize(),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-       MapImage(rememberedParking.mapUri)
-        
-       PictureImage(rememberedParking.imageUri, onAction = onAction, isActionable = !notModifiable)
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        val rememberedNotModifiable by remember(notModifiable) { derivedStateOf { notModifiable } }
-        
-        EditableFields(
-            parking = rememberedParking,
-            notModifiable = rememberedNotModifiable,
-            onAction = onAction
-        )
-    }
-}
-
-@Composable
-fun PictureImage(imageUri: String?, onAction: (MainViewAction) -> Unit, isActionable: Boolean) {
-    Log.d("PictureImage", "Attempting to load imageUri: $imageUri, isActionable: $isActionable")
-    if (!imageUri.isNullOrEmpty()) {
-
-        AsyncImage(
-            model = imageUri,
-            contentDescription = stringResource(R.string.content_description_parking_image),
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(200.dp)
-                .background(MaterialTheme.colorScheme.surfaceVariant) // Placeholder background
-                .then(
-                    if (isActionable) {
-                        Modifier.clickable { onAction(MainViewAction.TakePicture) }
-                    } else {
-                        Modifier
-                    }
-                ),
-            contentScale = ContentScale.Crop,
-            placeholder = painterResource(id = R.drawable.ic_map_placeholder), // Generic placeholder
-            error = painterResource(id = R.drawable.ic_map_placeholder), // Generic error placeholder
-            onError = { errorResult ->
-                Log.e("PictureImage", "Error loading image: ${errorResult.result.throwable}")
-            }
-        )
-    } else {
-        Log.d("PictureImage", "imageUri is null or empty, showing placeholder.")
-        NoImagePlaceholder(onAction = onAction, isActionable = isActionable)
-    }
-}
-
-@Composable
-fun MapImage(mapUri: String?) {
-    if (!mapUri.isNullOrEmpty()) {
-        Log.d("MapUri", "MapUri: $mapUri")
-        AsyncImage(
-            model = mapUri,
-            contentDescription = stringResource(R.string.content_description_map_image),
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(200.dp)
-                .background(MaterialTheme.colorScheme.surfaceVariant), // Placeholder background
-            contentScale = ContentScale.Crop,
-            placeholder = painterResource(id = R.drawable.ic_map_placeholder), // Generic placeholder
-            error = painterResource(id = R.drawable.ic_map_placeholder),
-            onError = { errorResult ->
-                Log.w("MapImage", "Error loading mapUri: $mapUri. Exception: ${errorResult.result.throwable}")
-            }
-        )
-    } else {
-        NoMapPlaceholder()
-    }
-}
-
-@Composable
-fun NoImagePlaceholder(onAction: (MainViewAction) -> Unit, isActionable: Boolean) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(200.dp)
-            .background(MaterialTheme.colorScheme.surfaceVariant)
-            .then(
-                if (isActionable) Modifier.clickable { onAction(MainViewAction.TakePicture) }
-                else Modifier
-            ),
-        contentAlignment = Alignment.Center
-    ) {
-        if (isActionable) {
-            Icon(
-                painter = painterResource(id = R.drawable.ic_camera),
-                contentDescription = stringResource(R.string.content_description_take_picture_placeholder),
-                modifier = Modifier.height(64.dp),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        } else {
-            Icon(
-                imageVector = Icons.Outlined.BrokenImage,
-                contentDescription = stringResource(R.string.content_description_no_image_available),
-                modifier = Modifier.height(64.dp),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-            )
-        }
-    }
-}
-
-@Composable
-fun NoMapPlaceholder() {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(200.dp)
-            .background(MaterialTheme.colorScheme.surfaceVariant)
-            .padding(16.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        Text(stringResource(R.string.no_image_available))
-    }
-}
-
-@Composable
-fun EditableFields(
-    modifier: Modifier = Modifier,
-    parking: Parking,
-    notModifiable: Boolean,
-    onAction: (MainViewAction) -> Unit
-) {
-    val rememberedAddress by remember(parking.address) { derivedStateOf { parking.address ?: "" } }
-    val rememberedNotes by remember(parking.notes) { derivedStateOf { parking.notes } }
-    
-    Column(
-        modifier = modifier
-            .fillMaxWidth(),
-        verticalArrangement = Arrangement.Center
-    ) {
-        if (notModifiable) {
-            Text(
-                text = stringResource(R.string.label_address) + ": ${
-                    rememberedAddress.ifEmpty { stringResource(R.string.text_no_address_available) }
-                }",
-                style = MaterialTheme.typography.bodyLarge,
-            )
-            Text(
-                text = stringResource(R.string.label_notes) + ": ${rememberedNotes}",
-                style = MaterialTheme.typography.bodyLarge
-            )
-        } else {
-            OutlinedTextField(
-                value = rememberedAddress,
-                onValueChange = { newAddress ->
-                    onAction(MainViewAction.UpdateAddress(newAddress))
-                },
-                label = { Text(stringResource(R.string.label_address)) },
-                modifier = Modifier
-                    .fillMaxWidth(),
-                textStyle = MaterialTheme.typography.titleMedium
-            )
-            OutlinedTextField(
-                value = rememberedNotes,
-                onValueChange = { newNotes ->
-                    onAction(MainViewAction.UpdateNotes(newNotes))
-                },
-                label = { Text(stringResource(R.string.label_notes)) },
-                modifier = Modifier
-                    .fillMaxWidth(),
-                textStyle = MaterialTheme.typography.titleMedium
-            )
-        }
-    }
-}
-
-
-@Preview(showBackground = true)
+@Preview(showBackground = true, name = "Main Screen Preview")
 @Composable
 fun MainScreenPreview() {
     LastParkingTheme {
@@ -612,10 +416,11 @@ fun MainScreenPreview() {
             uiState = MainUiState.Success(
                 Parking(
                     id = "1",
+                    notes = stringResource(R.string.preview_notes_provisional),
                     location = ParkingLocation(0.0, 0.0, 0f),
                     address = stringResource(R.string.preview_address_provisional),
-                    notes = stringResource(R.string.preview_notes_provisional),
-                    imageUri = null
+                    imageUri = null,
+                    timestamp = System.currentTimeMillis()
                 )
             ),
             events = MutableSharedFlow(),
@@ -624,24 +429,6 @@ fun MainScreenPreview() {
     }
 }
 
-@Preview(showBackground = true)
-@Composable
-fun ParkingScreenPreviewNotModifiable() {
-    LastParkingTheme {
-        ParkingScreen(
-            parking = Parking(
-                id = "1",
-                date = Date().toString(),
-                location = ParkingLocation(0.0, 0.0),
-                address = "123 Main St, Anytown, USA",
-                notes = "Near the big oak tree.",
-                imageUri = null
-            ),
-            hasChanges = false,
-            notModifiable = true
-        )
-    }
-}
 
 @Preview(showBackground = true)
 @Composable
@@ -650,30 +437,18 @@ fun ParkingScreenPreviewModifiable() {
         ParkingScreen(
             parking = Parking(
                 id = "1",
-                date = Date().toString(),
+                notes = "Near the big oak tree.",
                 location = ParkingLocation(0.0, 0.0),
                 address = "123 Main St, Anytown, USA",
-                notes = "Near the big oak tree.",
-                imageUri = null
+                date = Date().toString(),
+                imageUri = null,
+                timestamp = System.currentTimeMillis()
             ),
-            hasChanges = true,
+
             notModifiable = false
         )
     }
 }
-
-@Preview(showBackground = true)
-@Composable
-fun ParkingScreenPreviewEmpty() {
-    LastParkingTheme {
-        ParkingScreen(
-            parking = EmptyParking,
-            hasChanges = false,
-            notModifiable = false
-        )
-    }
-}
-
 
 @Preview(showBackground = true)
 @Composable
