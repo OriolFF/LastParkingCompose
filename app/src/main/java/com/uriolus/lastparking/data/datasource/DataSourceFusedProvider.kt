@@ -1,5 +1,6 @@
 package com.uriolus.lastparking.data.datasource
 
+import android.annotation.SuppressLint
 import android.os.Looper
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationCallback
@@ -16,6 +17,7 @@ import org.koin.core.component.inject
 class DataSourceFusedProvider : KoinComponent {
     private val fusedLocationProviderClient: FusedLocationProviderClient by inject()
 
+    @SuppressLint("MissingPermission")
     fun getLocationUpdates(): Flow<ParkingLocation> = callbackFlow @androidx.annotation.RequiresPermission(
         allOf = [android.Manifest.permission.ACCESS_FINE_LOCATION, android.Manifest.permission.ACCESS_COARSE_LOCATION]
     ) {

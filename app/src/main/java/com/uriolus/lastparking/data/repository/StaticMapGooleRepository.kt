@@ -14,7 +14,7 @@ class StaticMapGooleRepository(val key: String) : StaticMapRepository {
 
         val lati = parkingLocation.latitude
         val longi = parkingLocation.longitude
-        val URI = "http://maps.google.com/maps/api/staticmap?markers=color:blue%7Clabel:P%7" +
+        val URI = "https://maps.google.com/maps/api/staticmap?markers=color:blue%7Clabel:P%7" +
                 "C$lati,$longi&zoom=17&size=640x300&&scale=1&sensor=false&key=$key"
         Log.d("URI","UriRequest: $URI")
         return URI.right()

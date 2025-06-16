@@ -4,8 +4,8 @@ trigger: manual
 
 # Main goal
 This app is about store the las location of the car. It has only one screen that shows the last location of the car, if it exists.
-When the user open the app, if theres a recent location stored, it will show it-
-The screen has a picture of the last location. At one side it has a static map with the last location.
+When the user open the app, if there is a recent location stored, it will show it.
+The screen has a picture of the last location. And a static map with the last location.
 Under the picture and the map, an editable field with the last location address.
 And under this field another field where the user can add some comment.
 It will have a fab button to create a new location. 
@@ -22,7 +22,7 @@ The static map is replaced by a dynamic map that shows the current user location
 - Room
 - Clean Architecture
 - Coroutines and Flow
-- Hilt for dependency injection
+- Koin for dependency injection
 Use separation of responsabilities, so each layer should have its own responsibility.
 - Data layer: 
   - Room for local database

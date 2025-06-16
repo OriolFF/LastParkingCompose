@@ -104,19 +104,17 @@ fun MainScreen(
 ) {
     val context = LocalContext.current
     val activity = LocalActivity.current
-    var currentImageUriForSaving: Uri? by remember { mutableStateOf(null) }
 
     val locationPermissions = arrayOf(
         Manifest.permission.ACCESS_FINE_LOCATION,
         Manifest.permission.ACCESS_COARSE_LOCATION
     )
 
-    // Camera Launcher using TakePicturePreview
+    // Camera Launcher using TakePicture
     val cameraLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.TakePicturePreview(),
-        onResult = { bitmap: Bitmap? ->
-            if (bitmap != null && currentImageUriForSaving != null) {
-                val success = saveBitmapToUri(context, bitmap, currentImageUriForSaving!!)
+        contract = ActivityResultContracts.TakePicture(),
+        onResult = { success: Boolean? ->
+            if (success==true) {
                 onAction(MainViewAction.CameraResult(success))
             } else {
                 onAction(MainViewAction.CameraResult(false))
@@ -158,8 +156,8 @@ fun MainScreen(
         events.collectLatest { event ->
             when (event) {
                 is MainViewEvent.TakeAPicture -> {
-                    currentImageUriForSaving = event.uriImage.toUri()
-                    cameraLauncher.launch(null) // TakePicturePreview takes null input
+                    val currentImageUriForSaving = event.uriImage.toUri()
+                    cameraLauncher.launch(currentImageUriForSaving)
                 }
                 is MainViewEvent.ShowMessage -> {
                     Log.d("MainScreen", "Event: ShowMessage - ${event.message}")
