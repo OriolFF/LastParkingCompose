@@ -62,4 +62,5 @@
     <string name="requesting_permission">Requesting permission...</string>
     <string name="take_picture_button_label">Take Picture</string>
     <string name="gps_accuracy_label">Accuracy:</string>
+    <string name="unit_meters">m</string>
 </resources>

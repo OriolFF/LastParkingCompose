@@ -11,16 +11,20 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.uriolus.lastparking.R
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
 
 @Composable
 fun GpsAccuracyIndicator(accuracy: Float?) {
@@ -37,9 +41,18 @@ fun GpsAccuracyIndicator(accuracy: Float?) {
             .fillMaxWidth()
             .padding(horizontal = 16.dp)
     ) {
+        val accuracyValueText = "%.1f".format(screenAccuracy)
         Text(
-            text = stringResource(R.string.gps_accuracy_label, "%.1f".format(screenAccuracy)),
-            style = MaterialTheme.typography.labelSmall
+            text = buildAnnotatedString {
+                append(stringResource(id = R.string.gps_accuracy_label)) // e.g., "GPS Accuracy:"
+                append(" ") // Space
+                append(accuracyValueText) // e.g., "12.3"
+                append(" ") // Space
+                withStyle(style = SpanStyle(fontSize = 9.sp)) { // "very small" text for unit
+                    append(stringResource(id = R.string.unit_meters)) // e.g., "meters"
+                }
+            },
+            style = MaterialTheme.typography.labelSmall // Base style for prefix and value
         )
         Spacer(modifier = Modifier.height(4.dp))
 
