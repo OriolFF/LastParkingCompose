@@ -50,12 +50,8 @@ class MainViewModel(
     fun handleAction(action: MainViewAction) {
         when (action) {
             is MainViewAction.LoadLastParking -> loadLastParking()
-            is MainViewAction.StartNewParkingFlow -> {
-                startNewParkingProcess()
-            }
-            is MainViewAction.ProceedWithInitialNewParking -> {
-                startLocationUpdates()
-            }
+            is MainViewAction.StartNewParkingFlow -> startNewParkingLocationUpdates(isInitialFlow = false)
+            is MainViewAction.ProceedWithInitialNewParking -> startNewParkingLocationUpdates(isInitialFlow = true)
             is MainViewAction.NewParkingScreenStarted -> {
                 newParkingImageOutputUri = action.imageOutputUri
             }
@@ -90,6 +86,38 @@ class MainViewModel(
             is MainViewAction.ImageClicked -> onTakePicture()
             is MainViewAction.CameraResult -> handleCameraResult(action.success)
             is MainViewAction.DeleteCurrentParking -> handleDeleteCurrentParking()
+        }
+    }
+
+    private fun startNewParkingLocationUpdates(isInitialFlow: Boolean) {
+        locationUpdatesJob?.cancel()
+        addressFetchAttempted = false
+        // Explicitly set current timestamp when starting a new parking flow
+        _uiState.update { MainUiState.NewParking(parking = EmptyParking.copy(timestamp = System.currentTimeMillis()), gpsAccuracy = null, isInitialFlow = isInitialFlow) }
+
+        locationUpdatesJob = viewModelScope.launch {
+            getLocationUpdatesUseCase.exec()
+                .collect { locationResult ->
+
+                            val currentParkingState = _uiState.value as? MainUiState.NewParking ?: return@collect
+
+                            val updatedParking = currentParkingState.parking.copy(location = locationResult)
+                            _uiState.update {
+                                currentParkingState.copy(
+                                    parking = updatedParking,
+                                    gpsAccuracy = locationResult.accuracy
+                                )
+                            }
+
+                            if (locationResult.accuracy != null &&
+                                locationResult.accuracy <= GOOD_ACCURACY_THRESHOLD && !addressFetchAttempted) {
+                                addressFetchAttempted = true
+                                fetchAddressAndMap(locationResult, updatedParking, currentParkingState)
+                            }
+
+
+
+                }
         }
     }
 

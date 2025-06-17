@@ -195,7 +195,7 @@ fun MainScreen(
                     )
                 },
                 navigationIcon = {
-                    if (uiState is MainUiState.NewParking) {
+                    if (uiState is MainUiState.NewParking && !uiState.isInitialFlow) {
                         IconButton(onClick = { onAction(MainViewAction.CancelAddNewParking) }) {
                             Icon(
                                 imageVector = Icons.Filled.ArrowBack,
