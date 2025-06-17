@@ -25,6 +25,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Done
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Save
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -218,10 +219,10 @@ fun MainScreen(
                 is MainUiState.NewParking -> {
                     FloatingActionButton(
                         onClick = { onAction(MainViewAction.SaveCurrentLocation) },
-                        containerColor = MaterialTheme.colorScheme.primary
+                        containerColor = MaterialTheme.colorScheme.secondaryContainer // Changed color
                     ) {
                         Icon(
-                            imageVector = Icons.Filled.Done,
+                            imageVector = Icons.Filled.Save,
                             contentDescription = stringResource(R.string.content_description_save_location)
                         )
                     }
