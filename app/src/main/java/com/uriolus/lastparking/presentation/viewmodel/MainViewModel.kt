@@ -1,6 +1,5 @@
 package com.uriolus.lastparking.presentation.viewmodel
 
-import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import arrow.core.Either
@@ -15,12 +14,15 @@ import com.uriolus.lastparking.domain.use_case.GetLocationUpdatesUseCase
 import com.uriolus.lastparking.domain.use_case.GetMapUrlFromLocationUseCase
 import com.uriolus.lastparking.domain.use_case.SaveParkingUseCase
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import android.util.Log
 
 private const val GOOD_ACCURACY_THRESHOLD = 50.0f // meters
 
@@ -34,14 +36,14 @@ class MainViewModel(
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<MainUiState>(MainUiState.Loading)
-    val uiState: StateFlow<MainUiState> = _uiState
+    val uiState: StateFlow<MainUiState> = _uiState.asStateFlow()
 
-    private val _events = Channel<MainViewEvent>()
-    val events = _events.receiveAsFlow()
+    private val _events = MutableSharedFlow<MainViewEvent>()
+    val events: SharedFlow<MainViewEvent> = _events.asSharedFlow()
 
     private var locationUpdatesJob: Job? = null
     private var addressFetchAttempted: Boolean = false
-    private var newParkingImageOutputUri: Uri? = null
+    private var newParkingImageOutputUri: String? = null
 
     init {
         handleAction(MainViewAction.LoadLastParking)
@@ -136,13 +138,13 @@ class MainViewModel(
     }
 
     private fun onTakePicture() {
-        viewModelScope.launch {
-            if (newParkingImageOutputUri != null) {
-                _events.send(MainViewEvent.TakeAPicture(newParkingImageOutputUri!!))
-            } else {
-                _events.send(MainViewEvent.ShowError(AppError.ErrorTakingPicture))
+        Log.d("MainViewModel", "onTakePicture called. newParkingImageOutputUri: $newParkingImageOutputUri")
+        newParkingImageOutputUri?.let { uriString ->
+            viewModelScope.launch { 
+                Log.d("MainViewModel", "Emitting TakeAPicture event with URI: $uriString")
+                _events.emit(MainViewEvent.TakeAPicture(uriString))
             }
-        }
+        } ?: Log.d("MainViewModel", "newParkingImageOutputUri is null, not emitting TakeAPicture event.")
     }
 
     private fun handleCameraResult(success: Boolean) {
@@ -159,14 +161,14 @@ class MainViewModel(
             if (success && imageUriTaken != null) {
                 _uiState.update {
                     targetParkingState.copy(
-                        parking = targetParkingState.parking.copy(imageUri = imageUriTaken.toString())
+                        parking = targetParkingState.parking.copy(imageUri = imageUriTaken)
                     )
                 }
             } else {
                 _uiState.update { targetParkingState }
                 if (!success) {
                     viewModelScope.launch {
-                        _events.send(MainViewEvent.ShowError(AppError.ErrorTakingPicture))
+                        _events.emit(MainViewEvent.ShowError(AppError.ErrorTakingPicture))
                     }
                 }
             }
@@ -244,10 +246,10 @@ class MainViewModel(
             }
 
             if (addressResult is Either.Left) {
-                _events.send(MainViewEvent.ShowError(addressResult.value))
+                _events.emit(MainViewEvent.ShowError(addressResult.value))
             }
             if (mapUrlResult is Either.Left) {
-                _events.send(MainViewEvent.ShowError(mapUrlResult.value))
+                _events.emit(MainViewEvent.ShowError(mapUrlResult.value))
             }
         }
     }
@@ -265,10 +267,10 @@ class MainViewModel(
                     is Either.Right -> {
                         newParkingImageOutputUri = null
                         _uiState.update { MainUiState.Success(parkingToSave) }
-                        _events.send(MainViewEvent.ShowMessage("Location Saved"))
+                        _events.emit(MainViewEvent.ShowMessage("Location Saved"))
                     }
 
-                    is Either.Left -> _events.send(MainViewEvent.ShowError(result.value))
+                    is Either.Left -> _events.emit(MainViewEvent.ShowError(result.value))
                 }
             }
         }

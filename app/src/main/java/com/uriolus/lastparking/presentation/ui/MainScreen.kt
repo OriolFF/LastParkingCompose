@@ -76,6 +76,7 @@ import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import androidx.core.net.toUri
 
 // Helper function to create an image URI
 fun createImageUri(context: Context): Uri {
@@ -146,12 +147,17 @@ fun MainScreen(
     )
 
     LaunchedEffect(uiState) {
-        if (uiState is MainUiState.RequestingPermission) {
-            locationPermissionLauncher.launch(locationPermissions)
-        }
-        if (uiState is MainUiState.NewParking) {
-            val newImageUri = createImageUri(context)
-            onAction(MainViewAction.NewParkingScreenStarted(newImageUri))
+        when (uiState) {
+            is MainUiState.RequestingPermission -> {
+                locationPermissionLauncher.launch(locationPermissions)
+            }
+            is MainUiState.NewParking -> {
+                val newImageUri = createImageUri(context)
+                onAction(MainViewAction.NewParkingScreenStarted(newImageUri.toString()))
+            }
+            else -> {
+                // No side effect for other states in this LaunchedEffect
+            }
         }
     }
 
@@ -159,7 +165,7 @@ fun MainScreen(
         events.collectLatest { event ->
             when (event) {
                 is MainViewEvent.TakeAPicture -> {
-                    val currentImageUriForSaving = event.uriImage
+                    val currentImageUriForSaving = event.uriImage.toUri()
                     cameraLauncher.launch(currentImageUriForSaving)
                 }
 
@@ -173,9 +179,6 @@ fun MainScreen(
                     Log.e("MainScreen", "Event: ShowError - ${event.error}")
                 }
 
-                is MainViewEvent.NavigateTo -> {
-                    Log.d("MainScreen", "Event: NavigateTo - ${event.route}")
-                }
             }
         }
     }

@@ -5,7 +5,7 @@ import android.net.Uri
 sealed interface MainViewAction {
     data object LoadLastParking : MainViewAction
     data object StartNewParkingFlow : MainViewAction // User explicitly wants to start new parking
-    data class NewParkingScreenStarted(val imageOutputUri: Uri) : MainViewAction // Screen is ready with URI
+    data class NewParkingScreenStarted(val imageOutputUri: String?) : MainViewAction // Screen is ready with URI
     data object ProceedWithInitialNewParking : MainViewAction // Added new action
 
     // Location Permission related actions
