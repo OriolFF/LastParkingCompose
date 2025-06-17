@@ -165,7 +165,8 @@ class MainViewModel(
     private fun startLocationUpdates() {
         locationUpdatesJob?.cancel()
         addressFetchAttempted = false
-        _uiState.update { MainUiState.NewParking(parking = EmptyParking.copy(), gpsAccuracy = null) }
+        // Explicitly set current timestamp when starting a new parking flow
+        _uiState.update { MainUiState.NewParking(parking = EmptyParking.copy(timestamp = System.currentTimeMillis()), gpsAccuracy = null) }
 
         locationUpdatesJob = viewModelScope.launch {
             getLocationUpdatesUseCase.exec()

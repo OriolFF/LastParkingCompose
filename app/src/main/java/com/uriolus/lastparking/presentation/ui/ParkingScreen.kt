@@ -1,4 +1,4 @@
-package com.uriolus.lastparking.presentation
+package com.uriolus.lastparking.presentation.ui
 
 import android.util.Log
 import androidx.compose.foundation.background
@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -24,6 +25,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -34,6 +36,7 @@ import com.uriolus.lastparking.R
 import com.uriolus.lastparking.domain.model.EmptyParking
 import com.uriolus.lastparking.domain.model.Parking
 import com.uriolus.lastparking.presentation.viewmodel.MainViewAction
+import com.uriolus.lastparking.presentation.util.DateMapper
 import com.uriolus.lastparking.ui.theme.LastParkingTheme
 
 
@@ -57,27 +60,47 @@ fun ParkingScreen(
             .fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Map image takes 20% of the available space
+        // Map image takes 30% of the available height
         MapImage(
             mapUri = rememberedParking.mapUri,
             modifier = Modifier
                 .fillMaxWidth()
-                .weight(0.4f)
+                .fillMaxHeight(0.3f)
         )
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Picture image takes the most space
+        // Picture image takes 40% of the available height
         PictureImage(
             imageUri = rememberedParking.imageUri,
             onAction = onAction,
             isActionable = !notModifiable,
             modifier = Modifier
                 .fillMaxWidth()
-                .weight(0.6f) // More weight means more space
+                .fillMaxHeight(0.4f)
         )
 
         Spacer(modifier = Modifier.height(16.dp))
+
+        // Display timestamp if it's an existing parking
+
+        Log.d("ParkingScreen", "Timestamp check: parking.timestamp = ${rememberedParking.timestamp}, Condition: ${rememberedParking.timestamp > 0L}")
+        if (rememberedParking.timestamp > 0L) {
+            val formattedDate = DateMapper.formatTimestampToReadableDate(rememberedParking.timestamp)
+            // Assuming R.string.label_parked_at is "Parked at: %1$s"
+            val fullText = stringResource(R.string.label_parked_at, formattedDate)
+            Log.d("ParkingScreen", "INSIDE IF: Preparing to display timestamp. FormattedDate: '$formattedDate', FullText: '$fullText'")
+            Text(
+                text = fullText,
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier
+                    .align(Alignment.Start) // Align text to the start
+                    .background(Color.Yellow) // Added yellow background for visibility
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+        } else {
+            Log.d("ParkingScreen", "Timestamp is not > 0L, not displaying. Timestamp: ${rememberedParking.timestamp}")
+        }
 
         val rememberedNotModifiable by remember(notModifiable) { derivedStateOf { notModifiable } }
 

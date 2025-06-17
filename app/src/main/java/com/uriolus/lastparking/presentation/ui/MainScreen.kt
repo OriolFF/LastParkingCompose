@@ -1,4 +1,4 @@
-package com.uriolus.lastparking.presentation
+package com.uriolus.lastparking.presentation.ui
 
 import android.Manifest
 import android.app.Activity
@@ -58,7 +58,6 @@ import androidx.core.content.FileProvider
 import com.uriolus.lastparking.R
 import com.uriolus.lastparking.domain.model.Parking
 import com.uriolus.lastparking.domain.model.ParkingLocation
-import com.uriolus.lastparking.presentation.ui.GpsAccuracyIndicator
 import com.uriolus.lastparking.presentation.viewmodel.MainUiState
 import com.uriolus.lastparking.presentation.viewmodel.MainViewAction
 import com.uriolus.lastparking.presentation.viewmodel.MainViewEvent

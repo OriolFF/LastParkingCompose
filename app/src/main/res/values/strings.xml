@@ -63,4 +63,5 @@
     <string name="take_picture_button_label">Take Picture</string>
     <string name="gps_accuracy_label">Accuracy:</string>
     <string name="unit_meters">m</string>
+    <string name="label_parked_at">Date</string>
 </resources>

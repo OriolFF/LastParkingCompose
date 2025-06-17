@@ -5,6 +5,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import com.uriolus.lastparking.presentation.ui.MainScreen
 import com.uriolus.lastparking.presentation.viewmodel.MainViewModel
 import com.uriolus.lastparking.ui.theme.LastParkingTheme
 import org.koin.androidx.viewmodel.ext.android.viewModel
