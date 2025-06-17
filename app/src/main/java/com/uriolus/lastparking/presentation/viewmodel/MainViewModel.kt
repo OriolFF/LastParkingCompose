@@ -85,7 +85,7 @@ class MainViewModel(
             is MainViewAction.UpdateNotes -> updateParkingDetails { it.copy(notes = action.notes) }
             is MainViewAction.UpdateAddress -> updateParkingDetails { it.copy(address = action.address) }
             is MainViewAction.SetImageUri -> updateParkingDetails { it.copy(imageUri = action.imageUri) }
-            is MainViewAction.TakePicture -> onTakePicture()
+            is MainViewAction.ImageClicked -> onTakePicture()
             is MainViewAction.CameraResult -> handleCameraResult(action.success)
         }
     }

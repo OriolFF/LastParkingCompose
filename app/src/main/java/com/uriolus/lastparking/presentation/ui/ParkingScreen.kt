@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -17,7 +16,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Camera
 import androidx.compose.material.icons.outlined.BrokenImage
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -25,12 +23,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -89,12 +84,19 @@ fun ParkingScreen(
 
         // Display timestamp if it's an existing parking
 
-        Log.d("ParkingScreen", "Timestamp check: parking.timestamp = ${rememberedParking.timestamp}, Condition: ${rememberedParking.timestamp > 0L}")
+        Log.d(
+            "ParkingScreen",
+            "Timestamp check: parking.timestamp = ${rememberedParking.timestamp}, Condition: ${rememberedParking.timestamp > 0L}"
+        )
         if (rememberedParking.timestamp > 0L) {
-            val formattedDate = DateMapper.formatTimestampToReadableDate(rememberedParking.timestamp)
+            val formattedDate =
+                DateMapper.formatTimestampToReadableDate(rememberedParking.timestamp)
             // Assuming R.string.label_parked_at is "Parked at: %1$s"
             val fullText = stringResource(R.string.label_parked_at, formattedDate)
-            Log.d("ParkingScreen", "INSIDE IF: Preparing to display timestamp. FormattedDate: '$formattedDate', FullText: '$fullText'")
+            Log.d(
+                "ParkingScreen",
+                "INSIDE IF: Preparing to display timestamp. FormattedDate: '$formattedDate', FullText: '$fullText'"
+            )
             Text(
                 text = fullText,
                 style = MaterialTheme.typography.bodyMedium,
@@ -103,7 +105,10 @@ fun ParkingScreen(
             )
             Spacer(modifier = Modifier.height(8.dp))
         } else {
-            Log.d("ParkingScreen", "Timestamp is not > 0L, not displaying. Timestamp: ${rememberedParking.timestamp}")
+            Log.d(
+                "ParkingScreen",
+                "Timestamp is not > 0L, not displaying. Timestamp: ${rememberedParking.timestamp}"
+            )
         }
 
         val rememberedNotModifiable by remember(notModifiable) { derivedStateOf { notModifiable } }
@@ -136,11 +141,7 @@ fun PictureImage(
             modifier = modifier // Use the modifier passed from the parent
                 .background(MaterialTheme.colorScheme.surfaceVariant)
                 .then(
-                    if (isActionable) {
-                        Modifier.clickable { onAction(MainViewAction.TakePicture) }
-                    } else {
-                        Modifier.clickable { onAction(MainViewAction.ShowFullScreenImage(imageUri)) }
-                    }
+                    Modifier.clickable { onAction(MainViewAction.ImageClicked) }
                 ),
             contentScale = ContentScale.Fit,
             placeholder = painterResource(id = R.drawable.ic_map_placeholder),
@@ -195,7 +196,7 @@ fun NoImagePlaceholder(
         modifier = modifier // Use the passed modifier
             .background(MaterialTheme.colorScheme.surfaceVariant)
             .then(
-                if (isActionable) Modifier.clickable { onAction(MainViewAction.TakePicture) }
+                if (isActionable) Modifier.clickable { onAction(MainViewAction.ImageClicked) }
                 else Modifier
             ),
         contentAlignment = Alignment.Center
@@ -239,7 +240,11 @@ fun EditableFields(
     onAction: (MainViewAction) -> Unit
 ) {
     val rememberedAddress by remember(parking.address) { derivedStateOf { parking.address ?: "" } }
-    val rememberedNotes by remember(parking.notes) { derivedStateOf { parking.notes ?: "" } } // Ensure notes is not null
+    val rememberedNotes by remember(parking.notes) {
+        derivedStateOf {
+            parking.notes ?: ""
+        }
+    } // Ensure notes is not null
 
     // This Column is fine as it groups the Text/TextFields together.
     Column(

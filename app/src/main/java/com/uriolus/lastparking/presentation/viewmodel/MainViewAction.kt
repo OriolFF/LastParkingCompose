@@ -23,7 +23,7 @@ sealed interface MainViewAction {
     data class SetImageUri(val imageUri: String?) : MainViewAction
 
     // Camera related actions
-    data object TakePicture : MainViewAction
+    data object ImageClicked : MainViewAction
     data class CameraResult(val success: Boolean) : MainViewAction
 
 }
