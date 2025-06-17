@@ -325,7 +325,7 @@ fun MainScreen(
             is MainUiState.Success -> ParkingScreen(
                 modifier = Modifier.padding(paddingValues),
                 parking = uiState.parking,
-                notModifiable = false,
+                notModifiable = true,
                 onAction = onAction
             )
 

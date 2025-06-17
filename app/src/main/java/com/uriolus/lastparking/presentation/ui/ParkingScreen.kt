@@ -252,18 +252,7 @@ fun EditableFields(
             .fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(8.dp) // Adds space between fields
     ) {
-        if (notModifiable) {
-            Text(
-                text = stringResource(R.string.label_address) + ": ${
-                    rememberedAddress.ifEmpty { stringResource(R.string.text_no_address_available) }
-                }",
-                style = MaterialTheme.typography.bodyLarge,
-            )
-            Text(
-                text = stringResource(R.string.label_notes) + ": ${rememberedNotes}",
-                style = MaterialTheme.typography.bodyLarge
-            )
-        } else {
+
             OutlinedTextField(
                 value = rememberedAddress,
                 onValueChange = { newAddress ->
@@ -272,7 +261,8 @@ fun EditableFields(
                 label = { Text(stringResource(R.string.label_address)) },
                 modifier = Modifier
                     .fillMaxWidth(),
-                textStyle = MaterialTheme.typography.titleMedium
+                textStyle = MaterialTheme.typography.titleMedium,
+                readOnly = notModifiable
             )
             OutlinedTextField(
                 value = rememberedNotes,
@@ -282,10 +272,11 @@ fun EditableFields(
                 label = { Text(stringResource(R.string.label_notes)) },
                 modifier = Modifier
                     .fillMaxWidth(),
-                textStyle = MaterialTheme.typography.titleMedium
+                textStyle = MaterialTheme.typography.titleMedium,
+                readOnly = notModifiable
             )
         }
-    }
+
 }
 
 @Preview(showBackground = true, name = "Parking Screen - Empty")
