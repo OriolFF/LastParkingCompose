@@ -124,7 +124,6 @@ fun PictureImage(
     isActionable: Boolean,
     modifier: Modifier = Modifier // Accept modifier from the parent
 ) {
-    Log.d("PictureImage", "Attempting to load imageUri: $imageUri, isActionable: $isActionable")
     if (!imageUri.isNullOrEmpty()) {
         AsyncImage(
             model = imageUri,

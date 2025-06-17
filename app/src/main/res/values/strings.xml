@@ -3,31 +3,12 @@
     
     <!-- Main Screen -->
     <string name="add_parking">Add Location</string>
-    <string name="map_location">Map Location</string>
-    <string name="take_photo">Take Photo</string>
-    <string name="address">Address</string>
-    <string name="comment">Comment</string>
-    <string name="menu">Menu</string>
-    <string name="save">Save</string>
-    <string name="saving">Saving…</string>
-    <string name="location_saved">Location saved</string>
-    <string name="error_saving_location">Error saving location</string>
     <string name="no_location_saved">No location saved yet</string>
     <string name="gps_accuracy">GPS Accuracy: %1$.1f meters</string>
-    <string name="gps_searching">Searching for location…</string>
-    <string name="gps_acquired">Location acquired</string>
-    <string name="capture_image">Capture Image</string>
-    <string name="image_captured">Image captured</string>
-    <string name="error_capturing_image">Error capturing image</string>
-
-    <!-- Added for MainScreen.kt -->
-    <string name="label_address">Address</string>
-    <string name="label_notes">Notes</string>
-    <string name="error_message_generic">Error: %1$s</string>
+    <string name="no_image_available">No image available for this parking spot.</string>
     <string name="content_description_map_image">Image of the map location</string>
     <string name="content_description_parking_image">Image of the parked location</string>
     <string name="content_description_save_location">Save current location</string>
-    <string name="no_image_available">No image available for this parking spot.</string>
     <string name="content_description_captured_image">Captured image of the parking spot</string>
     <string name="tap_button_to_take_photo">Tap button above to take a photo</string>
     <string name="default_marker_title">Parked Location</string>
@@ -44,24 +25,17 @@
     <string name="permission_location_denied_message">Without location permission, the app cannot automatically find your car\'s current location. You can grant the permission from app settings or try again.</string>
     <string name="permission_button_grant">Grant</string>
     <string name="permission_button_retry">Try Again</string>
-    <string name="permission_button_cancel">Cancel</string>
     <string name="permission_button_no_thanks">No, Thanks</string>
-    <string name="dialog_button_cancel">Cancel</string>
     <string name="dialog_button_open_settings">Open Settings</string>
 
     <string name="title_add_new_parking">Add New Parking</string>
     <string name="content_description_back">Back</string>
-    <string name="label_take_picture">Take Picture</string>
-    <string name="label_gps_accuracy">GPS Accuracy: %.1f m</string>
-    <string name="label_gps_accuracy_unavailable">GPS Accuracy: Acquiring...</string>
-    <string name="label_dynamic_map_placeholder">Dynamic Map (Coming Soon)</string>
-
-    <string name="captured_image_description">Captured parking image</string>
-    <string name="current_location_marker_title">Current Location</string>
-    <string name="map_waiting_for_location">Waiting for location to display map...</string>
-    <string name="requesting_permission">Requesting permission...</string>
-    <string name="take_picture_button_label">Take Picture</string>
+    <string name="label_address">Address</string>
+    <string name="label_notes">Notes</string>
+    <string name="error_message_generic">Error: %1$s</string>
     <string name="gps_accuracy_label">Accuracy:</string>
     <string name="unit_meters">m</string>
     <string name="label_parked_at">Parked at: %1$s</string>
+    <string name="requesting_permission">Requesting permission...</string>
+    <string name="permission_button_cancel">Cancel</string>
 </resources>
