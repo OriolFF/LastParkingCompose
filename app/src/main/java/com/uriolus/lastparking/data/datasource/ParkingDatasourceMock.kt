@@ -13,7 +13,11 @@ class ParkingDatasourceMock : ParkingDatasource {
         TODO("Not yet implemented")
     }
 
-    override suspend fun getLastParking(): Either<AppError, Parking> {
+    override suspend fun deleteParking(parking: Parking): Either<AppError, Unit> {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun getParking(): Either<AppError, Parking> {
         delay(1000L) // Simulate a delayR()
         return EmptyParking.copy(
             address = "Pla de l'alemany 17",

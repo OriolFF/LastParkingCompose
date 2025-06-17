@@ -8,7 +8,7 @@ import com.uriolus.lastparking.domain.repository.ParkingRepository
 class SaveParkingUseCase(
     private val repository: ParkingRepository
 ) {
-    suspend operator fun invoke(parking: Parking): Either<AppError, Unit> {
+    suspend fun exec(parking: Parking): Either<AppError, Unit> {
         return repository.saveParking(parking)
     }
 }

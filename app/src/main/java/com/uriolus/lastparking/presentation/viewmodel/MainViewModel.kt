@@ -8,6 +8,7 @@ import com.uriolus.lastparking.domain.model.AppError
 import com.uriolus.lastparking.domain.model.EmptyParking
 import com.uriolus.lastparking.domain.model.Parking
 import com.uriolus.lastparking.domain.model.ParkingLocation
+import com.uriolus.lastparking.domain.use_case.DeleteParkingUseCase
 import com.uriolus.lastparking.domain.use_case.GetAddressFromLocationUseCase
 import com.uriolus.lastparking.domain.use_case.GetLastParkingUseCase
 import com.uriolus.lastparking.domain.use_case.GetLocationUpdatesUseCase
@@ -26,6 +27,7 @@ private const val GOOD_ACCURACY_THRESHOLD = 50.0f // meters
 class MainViewModel(
     private val getLastParkingUseCase: GetLastParkingUseCase,
     private val saveParkingUseCase: SaveParkingUseCase,
+    private val deleteParkingUseCase: DeleteParkingUseCase,
     private val getLocationUpdatesUseCase: GetLocationUpdatesUseCase,
     private val getAddressFromLocationUseCase: GetAddressFromLocationUseCase,
     private val getStaticMapRepositoryUseCase: GetMapUrlFromLocationUseCase
@@ -87,6 +89,7 @@ class MainViewModel(
             is MainViewAction.SetImageUri -> updateParkingDetails { it.copy(imageUri = action.imageUri) }
             is MainViewAction.ImageClicked -> onTakePicture()
             is MainViewAction.CameraResult -> handleCameraResult(action.success)
+            is MainViewAction.DeleteCurrentParking -> handleDeleteCurrentParking()
         }
     }
 
@@ -230,7 +233,7 @@ class MainViewModel(
 
         if (parkingToSave != null) {
             viewModelScope.launch {
-                when (val result = saveParkingUseCase(parkingToSave)) {
+                when (val result = saveParkingUseCase.exec(parkingToSave)) {
                     is Either.Right -> {
                         newParkingImageOutputUri = null
                         _uiState.update { MainUiState.Success(parkingToSave) }
@@ -250,6 +253,33 @@ class MainViewModel(
         } else if (currentState is MainUiState.Success) {
             val updatedParking = updateLogic(currentState.parking)
             _uiState.update { MainUiState.Success(updatedParking) }
+        }
+    }
+
+    private fun handleDeleteCurrentParking() {
+        viewModelScope.launch {
+            val currentState = _uiState.value
+            if (currentState is MainUiState.Success) {
+                deleteParkingUseCase.exec(currentState.parking)
+                checkLastParking()
+            }
+        }
+    }
+
+    private fun checkLastParking() {
+        viewModelScope.launch {
+            when (val result = getLastParkingUseCase.exec()) {
+                is Either.Right -> {
+                    if (result.value == EmptyParking) {
+                        _uiState.update { MainUiState.InitialNewParkingRequiresPermissionCheck }
+                    } else {
+                        _uiState.update { MainUiState.Success(result.value) }
+                    }
+                }
+                is Either.Left -> {
+                    _uiState.update { MainUiState.InitialNewParkingRequiresPermissionCheck }
+                }
+            }
         }
     }
 }

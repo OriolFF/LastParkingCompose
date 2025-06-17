@@ -45,7 +45,7 @@ class ParkingDatasourcePreferences(
         }
     }
 
-    override suspend fun getLastParking(): Either<AppError, Parking> = either {
+    override suspend fun getParking(): Either<AppError, Parking> = either {
         val preferences = try {
             context.dataStore.data
                 .catch { exception ->
@@ -70,5 +70,17 @@ class ParkingDatasourcePreferences(
                 else -> AppError.ErrorLoading("An unexpected error occurred while loading parking: ${e.message}")
             }
         }.bind()
+    }
+
+    override suspend fun deleteParking(parking: Parking): Either<AppError, Unit> = either {
+        try {
+            context.dataStore.edit { preferences ->
+                preferences.remove(PARKING_KEY)
+            }
+        } catch (e: IOException) {
+            raise(AppError.ErrorDeleting("Failed to delete parking data from DataStore: ${e.message}"))
+        } catch (e: Exception) {
+            raise(AppError.ErrorDeleting("An unexpected error occurred while deleting parking: ${e.message}"))
+        }
     }
 }

@@ -7,4 +7,5 @@ import com.uriolus.lastparking.domain.model.Parking
 interface ParkingRepository {
     suspend fun saveParking(parking: Parking): Either<AppError, Unit>
     suspend fun getLastParking(): Either<AppError, Parking>
+    suspend fun deleteParking(parking: Parking): Either<AppError, Unit>
 }

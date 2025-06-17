@@ -15,6 +15,10 @@ class ParkingRepositoryImpl(
     }
     
     override suspend fun getLastParking(): Either<AppError, Parking> {
-        return localDataSource.getLastParking()
+        return localDataSource.getParking()
+    }
+
+    override suspend fun deleteParking(parking: Parking): Either<AppError, Unit> {
+        return localDataSource.deleteParking(parking)
     }
 }
