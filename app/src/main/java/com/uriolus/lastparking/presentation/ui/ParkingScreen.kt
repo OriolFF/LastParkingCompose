@@ -95,7 +95,6 @@ fun ParkingScreen(
                 style = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier
                     .align(Alignment.Start) // Align text to the start
-                    .background(Color.Yellow) // Added yellow background for visibility
             )
             Spacer(modifier = Modifier.height(8.dp))
         } else {
