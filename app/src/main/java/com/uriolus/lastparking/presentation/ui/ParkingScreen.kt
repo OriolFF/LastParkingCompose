@@ -5,6 +5,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -14,9 +15,12 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.DirectionsWalk
 import androidx.compose.material.icons.filled.Camera
+import androidx.compose.material.icons.filled.DirectionsWalk
 import androidx.compose.material.icons.outlined.BrokenImage
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -35,8 +39,8 @@ import coil.compose.AsyncImage
 import com.uriolus.lastparking.R
 import com.uriolus.lastparking.domain.model.EmptyParking
 import com.uriolus.lastparking.domain.model.Parking
-import com.uriolus.lastparking.presentation.viewmodel.MainViewAction
 import com.uriolus.lastparking.presentation.util.DateMapper
+import com.uriolus.lastparking.presentation.viewmodel.MainViewAction
 import com.uriolus.lastparking.ui.theme.LastParkingTheme
 
 
@@ -61,12 +65,32 @@ fun ParkingScreen(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         // Map image takes 30% of the available height
-        MapImage(
-            mapUri = rememberedParking.mapUri,
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .fillMaxHeight(0.3f)
-        )
+        ) {
+            MapImage(
+                mapUri = rememberedParking.mapUri,
+                modifier = Modifier.fillMaxSize()
+            )
+            if (rememberedParking.location != null && notModifiable) {
+                IconButton(
+                    onClick = { onAction(MainViewAction.WalkToLocation) },
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .padding(16.dp)
+                        .background(MaterialTheme.colorScheme.primaryContainer, CircleShape)
+                        .size(48.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.DirectionsWalk,
+                        contentDescription = stringResource(R.string.content_description_walk_to_location),
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                }
+            }
+        }
 
         Spacer(modifier = Modifier.height(16.dp))
 

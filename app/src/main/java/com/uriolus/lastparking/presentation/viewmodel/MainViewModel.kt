@@ -88,6 +88,18 @@ class MainViewModel(
             is MainViewAction.ImageClicked -> onTakePicture()
             is MainViewAction.CameraResult -> handleCameraResult(action.success)
             is MainViewAction.DeleteCurrentParking -> handleDeleteCurrentParking()
+            is MainViewAction.WalkToLocation -> {
+                val currentState = _uiState.value
+                if (currentState is MainUiState.Success) {
+                    currentState.parking.location?.let { location ->
+                        viewModelScope.launch {
+                            _events.emit(MainViewEvent.OnWalkToLocation(location))
+                        }
+                    }
+                }
+            }
+            // Camera related actions
+            is MainViewAction.ImageClicked -> onTakePicture()
         }
     }
 
@@ -121,10 +133,6 @@ class MainViewModel(
 
                 }
         }
-    }
-
-    private fun startNewParkingProcess() {
-        _uiState.update { MainUiState.RequestingPermission }
     }
 
     private fun startLocationUpdatesIfReady() {

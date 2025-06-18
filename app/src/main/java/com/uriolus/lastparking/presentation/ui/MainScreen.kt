@@ -61,6 +61,7 @@ import androidx.compose.ui.unit.dp
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
+import androidx.core.net.toUri
 import com.uriolus.lastparking.R
 import com.uriolus.lastparking.domain.model.Parking
 import com.uriolus.lastparking.domain.model.ParkingLocation
@@ -76,7 +77,6 @@ import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
-import androidx.core.net.toUri
 
 // Helper function to create an image URI
 fun createImageUri(context: Context): Uri {
@@ -179,6 +179,12 @@ fun MainScreen(
                     Log.e("MainScreen", "Event: ShowError - ${event.error}")
                 }
 
+                is MainViewEvent.OnWalkToLocation -> {
+                    val gmmIntentUri = "google.navigation:q=${event.location.latitude},${event.location.longitude}&mode=w".toUri()
+                    val mapIntent = Intent(Intent.ACTION_VIEW, gmmIntentUri)
+                    mapIntent.setPackage("com.google.android.apps.maps")
+                    context.startActivity(mapIntent)
+                }
             }
         }
     }

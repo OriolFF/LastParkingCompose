@@ -36,6 +36,7 @@
     <string name="gps_accuracy_label">Accuracy:</string>
     <string name="unit_meters">m</string>
     <string name="label_parked_at">Parked at: %1$s</string>
-    <string name="requesting_permission">Requesting permission...</string>
+    <string name="requesting_permission">Requesting permission…</string>
     <string name="permission_button_cancel">Cancel</string>
+    <string name="content_description_walk_to_location">Get directions to your car</string>
 </resources>

@@ -22,6 +22,7 @@ sealed interface MainViewAction {
     data class UpdateAddress(val address: String) : MainViewAction
     data class SetImageUri(val imageUri: String?) : MainViewAction
     data object DeleteCurrentParking : MainViewAction
+    data object WalkToLocation : MainViewAction
 
     // Camera related actions
     data object ImageClicked : MainViewAction
