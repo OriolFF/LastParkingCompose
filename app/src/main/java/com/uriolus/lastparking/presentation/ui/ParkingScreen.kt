@@ -31,18 +31,20 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import coil.request.CachePolicy
+import coil.request.ImageRequest
 import com.uriolus.lastparking.R
 import com.uriolus.lastparking.domain.model.EmptyParking
 import com.uriolus.lastparking.domain.model.Parking
 import com.uriolus.lastparking.presentation.util.DateMapper
 import com.uriolus.lastparking.presentation.viewmodel.MainViewAction
 import com.uriolus.lastparking.ui.theme.LastParkingTheme
-
 
 @Composable
 fun ParkingScreen(
@@ -51,12 +53,6 @@ fun ParkingScreen(
     notModifiable: Boolean = false,
     onAction: (MainViewAction) -> Unit = {}
 ) {
-    val rememberedParking by remember(
-        parking.id, parking.location, parking.address,
-        parking.notes, parking.imageUri, parking.mapUri
-    ) {
-        derivedStateOf { parking }
-    }
 
     Column(
         modifier = modifier
@@ -71,10 +67,10 @@ fun ParkingScreen(
                 .fillMaxHeight(0.3f)
         ) {
             MapImage(
-                mapUri = rememberedParking.mapUri,
+                mapUri = parking.mapUri,
                 modifier = Modifier.fillMaxSize()
             )
-            if (rememberedParking.location != null && notModifiable) {
+            if (parking.location != null && notModifiable) {
                 IconButton(
                     onClick = { onAction(MainViewAction.WalkToLocation) },
                     modifier = Modifier
@@ -96,7 +92,7 @@ fun ParkingScreen(
 
         // Picture image takes 40% of the available height
         PictureImage(
-            imageUri = rememberedParking.imageUri,
+            imageUri = parking.imageUri,
             onAction = onAction,
             isActionable = !notModifiable,
             modifier = Modifier
@@ -108,19 +104,12 @@ fun ParkingScreen(
 
         // Display timestamp if it's an existing parking
 
-        Log.d(
-            "ParkingScreen",
-            "Timestamp check: parking.timestamp = ${rememberedParking.timestamp}, Condition: ${rememberedParking.timestamp > 0L}"
-        )
-        if (rememberedParking.timestamp > 0L) {
+        if (parking.timestamp > 0L) {
             val formattedDate =
-                DateMapper.formatTimestampToReadableDate(rememberedParking.timestamp)
+                DateMapper.formatTimestampToReadableDate(parking.timestamp)
             // Assuming R.string.label_parked_at is "Parked at: %1$s"
             val fullText = stringResource(R.string.label_parked_at, formattedDate)
-            Log.d(
-                "ParkingScreen",
-                "INSIDE IF: Preparing to display timestamp. FormattedDate: '$formattedDate', FullText: '$fullText'"
-            )
+
             Text(
                 text = fullText,
                 style = MaterialTheme.typography.bodyMedium,
@@ -131,7 +120,7 @@ fun ParkingScreen(
         } else {
             Log.d(
                 "ParkingScreen",
-                "Timestamp is not > 0L, not displaying. Timestamp: ${rememberedParking.timestamp}"
+                "Timestamp is not > 0L, not displaying. Timestamp: ${parking.timestamp}"
             )
         }
 
@@ -139,7 +128,7 @@ fun ParkingScreen(
 
         // Editable fields at the bottom
         EditableFields(
-            parking = rememberedParking,
+            parking = parking,
             notModifiable = rememberedNotModifiable,
             onAction = onAction
         )
@@ -158,9 +147,16 @@ fun PictureImage(
     isActionable: Boolean,
     modifier: Modifier = Modifier // Accept modifier from the parent
 ) {
+    val context = LocalContext.current
     if (!imageUri.isNullOrEmpty()) {
+        val imageRequest = ImageRequest.Builder(context)
+            .data(imageUri)
+            .memoryCachePolicy(CachePolicy.DISABLED)
+            .diskCachePolicy(CachePolicy.DISABLED)
+            .crossfade(true)
+            .build()
         AsyncImage(
-            model = imageUri,
+            model = imageRequest,
             contentDescription = stringResource(R.string.content_description_parking_image),
             modifier = modifier // Use the modifier passed from the parent
                 .background(MaterialTheme.colorScheme.surfaceVariant)
@@ -186,10 +182,16 @@ fun PictureImage(
 
 @Composable
 fun MapImage(mapUri: String?, modifier: Modifier = Modifier) {
+    val context = LocalContext.current
     if (!mapUri.isNullOrEmpty()) {
-        Log.d("MapUri", "MapUri: $mapUri")
+        val imageRequest = ImageRequest.Builder(context)
+            .data(mapUri)
+            .memoryCachePolicy(CachePolicy.DISABLED)
+            .diskCachePolicy(CachePolicy.DISABLED)
+            .crossfade(true)
+            .build()
         AsyncImage(
-            model = mapUri,
+            model = imageRequest,
             contentDescription = stringResource(R.string.content_description_map_image),
             modifier = modifier // Use the modifier from the parent
                 .background(MaterialTheme.colorScheme.surfaceVariant),
@@ -263,12 +265,6 @@ fun EditableFields(
     notModifiable: Boolean,
     onAction: (MainViewAction) -> Unit
 ) {
-    val rememberedAddress by remember(parking.address) { derivedStateOf { parking.address ?: "" } }
-    val rememberedNotes by remember(parking.notes) {
-        derivedStateOf {
-            parking.notes ?: ""
-        }
-    } // Ensure notes is not null
 
     // This Column is fine as it groups the Text/TextFields together.
     Column(
@@ -278,7 +274,7 @@ fun EditableFields(
     ) {
 
             OutlinedTextField(
-                value = rememberedAddress,
+                value = parking.address?:"",
                 onValueChange = { newAddress ->
                     onAction(MainViewAction.UpdateAddress(newAddress))
                 },
@@ -289,7 +285,7 @@ fun EditableFields(
                 readOnly = notModifiable
             )
             OutlinedTextField(
-                value = rememberedNotes,
+                value = parking.notes?:"",
                 onValueChange = { newNotes ->
                     onAction(MainViewAction.UpdateNotes(newNotes))
                 },
