@@ -64,14 +64,18 @@ import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.core.net.toUri
 import com.uriolus.lastparking.R
+import com.uriolus.lastparking.domain.model.AppError
+import com.uriolus.lastparking.domain.model.EmptyParking
 import com.uriolus.lastparking.domain.model.Parking
 import com.uriolus.lastparking.domain.model.ParkingLocation
+import com.uriolus.lastparking.presentation.util.DateMapper
 import com.uriolus.lastparking.presentation.viewmodel.MainUiState
 import com.uriolus.lastparking.presentation.viewmodel.MainViewAction
 import com.uriolus.lastparking.presentation.viewmodel.MainViewEvent
 import com.uriolus.lastparking.ui.theme.LastParkingTheme
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import java.io.File
@@ -464,13 +468,15 @@ fun MainScreenPreview() {
     LastParkingTheme {
         MainScreen(
             uiState = MainUiState.Success(
-                Parking(
+                parking = Parking(
                     id = "1",
                     notes = stringResource(R.string.preview_notes_provisional),
                     location = ParkingLocation(0.0, 0.0, 0f),
                     address = stringResource(R.string.preview_address_provisional),
+                    date = DateMapper.formatTimestampToReadableDate(System.currentTimeMillis()),
                     imageUri = null,
-                    timestamp = System.currentTimeMillis()
+                    timestamp = System.currentTimeMillis(),
+                    mapUri = null
                 )
             ),
             events = MutableSharedFlow(),
@@ -479,22 +485,142 @@ fun MainScreenPreview() {
     }
 }
 
-
-@Preview(showBackground = true)
+@Preview(showBackground = true, name = "GpsAccuracyIndicator Preview")
 @Composable
 fun GpsAccuracyIndicatorPreview() {
     LastParkingTheme {
         Column {
-            GpsAccuracyIndicator(accuracy = 3.0f)
-            Spacer(Modifier.height(16.dp))
-            GpsAccuracyIndicator(accuracy = 8.0f)
-            Spacer(Modifier.height(16.dp))
-            GpsAccuracyIndicator(accuracy = 15.0f)
-            Spacer(Modifier.height(16.dp))
-            GpsAccuracyIndicator(accuracy = 25.0f)
-            Spacer(Modifier.height(16.dp))
+            GpsAccuracyIndicator(accuracy = 5f)
+            GpsAccuracyIndicator(accuracy = 15f)
+            GpsAccuracyIndicator(accuracy = 25f)
             GpsAccuracyIndicator(accuracy = null)
         }
+    }
+}
+
+@Preview(showBackground = true, name = "Loading State")
+@Composable
+fun MainScreenLoadingPreview() {
+    LastParkingTheme {
+        MainScreen(
+            uiState = MainUiState.Loading,
+            events = MutableSharedFlow(),
+            onAction = {}
+        )
+    }
+}
+
+@Preview(showBackground = true, name = "Requesting Permission State")
+@Composable
+fun MainScreenRequestingPermissionPreview() {
+    LastParkingTheme {
+        MainScreen(
+            uiState = MainUiState.RequestingPermission,
+            events = MutableSharedFlow(),
+            onAction = {}
+        )
+    }
+}
+
+@Preview(showBackground = true, name = "Show Permission Rationale State")
+@Composable
+fun MainScreenShowPermissionRationalePreview() {
+    LastParkingTheme {
+        MainScreen(
+            uiState = MainUiState.ShowLocationPermissionRationale,
+            events = MutableSharedFlow(),
+            onAction = {}
+        )
+    }
+}
+
+@Preview(showBackground = true, name = "New Parking State - Initial Flow")
+@Composable
+fun MainScreenNewParkingInitialFlowPreview() {
+    LastParkingTheme {
+        MainScreen(
+            uiState = MainUiState.NewParking(
+                parking = EmptyParking.copy(timestamp = System.currentTimeMillis()),
+                gpsAccuracy = 10f,
+                isInitialFlow = true
+            ),
+            events = MutableSharedFlow(),
+            onAction = {}
+        )
+    }
+}
+
+@Preview(showBackground = true, name = "New Parking State - User Initiated")
+@Composable
+fun MainScreenNewParkingUserInitiatedPreview() {
+    LastParkingTheme {
+        MainScreen(
+            uiState = MainUiState.NewParking(
+                parking = EmptyParking.copy(timestamp = System.currentTimeMillis()),
+                gpsAccuracy = 5f,
+                isInitialFlow = false
+            ),
+            events = MutableSharedFlow(),
+            onAction = {}
+        )
+    }
+}
+
+@Preview(showBackground = true, name = "Error State")
+@Composable
+fun MainScreenErrorPreview() {
+    LastParkingTheme {
+        MainScreen(
+            uiState = MainUiState.Error(AppError.ErrorSaving("Preview error message")),
+            events = MutableSharedFlow(),
+            onAction = {}
+        )
+    }
+}
+
+@Preview(showBackground = true, name = "Success State - No Location")
+@Composable
+fun MainScreenSuccessNoLocationPreview() {
+    LastParkingTheme {
+        MainScreen(
+            uiState = MainUiState.Success(
+                parking = Parking(
+                    id = "1",
+                    notes = "Near the big oak tree, no location.",
+                    location = null,
+                    address = "Address not available",
+                    date = DateMapper.formatTimestampToReadableDate(System.currentTimeMillis()),
+                    imageUri = null,
+                    timestamp = System.currentTimeMillis(),
+                    mapUri = null
+                )
+            ),
+            events = MutableSharedFlow(),
+            onAction = {}
+        )
+    }
+}
+
+@Preview(showBackground = true, name = "Success State - With Location")
+@Composable
+fun MainScreenSuccessWithLocationPreview() {
+    LastParkingTheme {
+        MainScreen(
+            uiState = MainUiState.Success(
+                parking = Parking(
+                    id = "1",
+                    notes = "By the fountain.",
+                    location = ParkingLocation(40.7128, -74.0060),
+                    address = "1 Park Row, New York, NY",
+                    date = DateMapper.formatTimestampToReadableDate(System.currentTimeMillis()),
+                    imageUri = null, // Replace with a sample image URI for full preview
+                    timestamp = System.currentTimeMillis(),
+                    mapUri = null // Replace with a sample map URI string for full preview
+                )
+            ),
+            events = MutableSharedFlow(),
+            onAction = {}
+        )
     }
 }
 
