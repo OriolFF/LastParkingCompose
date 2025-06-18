@@ -76,7 +76,6 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import java.io.File
 import java.util.Date
-import java.util.Locale
 
 // Helper function to create an image URI
 fun createImageUri(context: Context): Uri {
@@ -480,26 +479,6 @@ fun MainScreenPreview() {
     }
 }
 
-
-@Preview(showBackground = true)
-@Composable
-fun ParkingScreenPreviewModifiable() {
-    LastParkingTheme {
-        ParkingScreen(
-            parking = Parking(
-                id = "1",
-                notes = "Near the big oak tree.",
-                location = ParkingLocation(0.0, 0.0),
-                address = "123 Main St, Anytown, USA",
-                date = Date().toString(),
-                imageUri = null,
-                timestamp = System.currentTimeMillis()
-            ),
-
-            notModifiable = false
-        )
-    }
-}
 
 @Preview(showBackground = true)
 @Composable
