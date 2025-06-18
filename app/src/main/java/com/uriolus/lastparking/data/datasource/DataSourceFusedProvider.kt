@@ -2,6 +2,7 @@ package com.uriolus.lastparking.data.datasource
 
 import android.annotation.SuppressLint
 import android.os.Looper
+import android.util.Log
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
@@ -23,6 +24,7 @@ class DataSourceFusedProvider : KoinComponent {
     ) {
         val callback = object : LocationCallback() {
             override fun onLocationResult(locationResult: LocationResult) {
+                Log.d("LocationCallback", "onLocationResult: $locationResult")
                 locationResult.lastLocation?.let { location ->
                     trySend(
                         ParkingLocation(

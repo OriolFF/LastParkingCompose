@@ -57,7 +57,7 @@ class MainViewModel(
             is MainViewAction.NewParkingScreenStarted -> {
                 newParkingImageOutputUri = action.imageOutputUri
             }
-            is MainViewAction.LocationPermissionGranted -> startLocationUpdatesIfReady()
+            is MainViewAction.LocationPermissionGranted -> startNewParkingLocationUpdates(isInitialFlow = true)
             is MainViewAction.LocationPermissionRequestCancelled -> loadLastParking()
             is MainViewAction.LocationPermissionDenied -> {
                 if (action.shouldShowRationale) {
@@ -98,15 +98,13 @@ class MainViewModel(
                     }
                 }
             }
-            // Camera related actions
-            is MainViewAction.ImageClicked -> onTakePicture()
         }
     }
 
     private fun startNewParkingLocationUpdates(isInitialFlow: Boolean) {
         locationUpdatesJob?.cancel()
         addressFetchAttempted = false
-        // Explicitly set current timestamp when starting a new parking flow
+
         _uiState.update { MainUiState.NewParking(parking = EmptyParking.copy(timestamp = System.currentTimeMillis()), gpsAccuracy = null, isInitialFlow = isInitialFlow) }
 
         locationUpdatesJob = viewModelScope.launch {
@@ -122,28 +120,16 @@ class MainViewModel(
                                     gpsAccuracy = locationResult.accuracy
                                 )
                             }
-
+                            Log.d("MainViewModel", "Location updates: $locationResult, accuracy: ${locationResult.accuracy}")
                             if (locationResult.accuracy != null &&
                                 locationResult.accuracy <= GOOD_ACCURACY_THRESHOLD && !addressFetchAttempted) {
                                 addressFetchAttempted = true
                                 fetchAddressAndMap(locationResult, updatedParking, currentParkingState)
                             }
-
-
-
                 }
         }
     }
 
-    private fun startLocationUpdatesIfReady() {
-        val currentState = _uiState.value
-        if (currentState is MainUiState.RequestingPermission || 
-            currentState is MainUiState.InitialNewParkingRequiresPermissionCheck || 
-            currentState is MainUiState.NewParking || 
-            currentState is MainUiState.Success) { 
-            startLocationUpdates()
-        }
-    }
 
     private fun onTakePicture() {
         Log.d("MainViewModel", "onTakePicture called. newParkingImageOutputUri: $newParkingImageOutputUri")
@@ -200,38 +186,6 @@ class MainViewModel(
                     _uiState.update { MainUiState.InitialNewParkingRequiresPermissionCheck }
                 }
             }
-        }
-    }
-
-    private fun startLocationUpdates() {
-        locationUpdatesJob?.cancel()
-        addressFetchAttempted = false
-        // Explicitly set current timestamp when starting a new parking flow
-        _uiState.update { MainUiState.NewParking(parking = EmptyParking.copy(timestamp = System.currentTimeMillis()), gpsAccuracy = null) }
-
-        locationUpdatesJob = viewModelScope.launch {
-            getLocationUpdatesUseCase.exec()
-                .collect { locationResult ->
-
-                            val currentParkingState = _uiState.value as? MainUiState.NewParking ?: return@collect
-
-                            val updatedParking = currentParkingState.parking.copy(location = locationResult)
-                            _uiState.update {
-                                currentParkingState.copy(
-                                    parking = updatedParking,
-                                    gpsAccuracy = locationResult.accuracy
-                                )
-                            }
-
-                            if (locationResult.accuracy != null &&
-                                locationResult.accuracy <= GOOD_ACCURACY_THRESHOLD && !addressFetchAttempted) {
-                                addressFetchAttempted = true
-                                fetchAddressAndMap(locationResult, updatedParking, currentParkingState)
-                            }
-
-
-
-                }
         }
     }
 

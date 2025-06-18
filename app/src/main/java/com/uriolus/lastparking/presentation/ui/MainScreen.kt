@@ -7,6 +7,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.net.Uri
+import android.os.Environment
 import android.provider.Settings
 import android.util.Log
 import androidx.activity.compose.LocalActivity
@@ -74,25 +75,17 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import java.io.File
-import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
 // Helper function to create an image URI
 fun createImageUri(context: Context): Uri {
-    val imageDir = File(context.cacheDir, "images")
-    if (!imageDir.exists()) imageDir.mkdirs()
-    val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
-    val imageFile = File(imageDir, "JPEG_${timeStamp}_.jpg")
-    try {
-        imageFile.createNewFile() // Ensure the file exists
-    } catch (e: java.io.IOException) {
-        Log.e("MainScreen", "Failed to create image file", e)
-        // Handle error appropriately, perhaps return a fallback Uri or throw
-    }
+    val imageFileName = "last_parking_image.jpg"
+    val storageDir: File? = context.getExternalFilesDir(Environment.DIRECTORY_PICTURES)
+    val imageFile = File(storageDir, imageFileName)
     return FileProvider.getUriForFile(
         context,
-        "com.uriolus.lastparking.fileprovider", // Corrected authority
+        "com.uriolus.lastparking.fileprovider",
         imageFile
     )
 }
