@@ -64,7 +64,7 @@ fun ParkingScreen(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .fillMaxHeight(0.3f)
+                .fillMaxHeight(0.25f)
         ) {
             MapImage(
                 mapUri = parking.mapUri,
@@ -97,7 +97,7 @@ fun ParkingScreen(
             isActionable = !notModifiable,
             modifier = Modifier
                 .fillMaxWidth()
-                .fillMaxHeight(0.4f)
+                .fillMaxHeight(0.45f)
         )
 
         Spacer(modifier = Modifier.height(16.dp))
